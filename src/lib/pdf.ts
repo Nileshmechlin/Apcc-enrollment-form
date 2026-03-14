@@ -11,6 +11,9 @@ const LETTERED_INDENT_MM = 6
 const LINE_HEIGHT = 5
 const SECTION_SPACING = 4
 
+/** PDF theme color #A68045 (APCC brand) — RGB */
+const THEME_RGB = { r: 166, g: 128, b: 69 }
+
 type SectionLike = { heading: string; content: string; csrTableOnPdf?: boolean }
 
 /**
@@ -110,10 +113,10 @@ export async function generatePDF(
   const contentWidth = pageWidth - margin * 2
   let y = margin
 
-  // === Header (match original document) ===
+  // === Header (match original document); theme #A68045 ===
   doc.setFontSize(14)
   doc.setFont("helvetica", "bold")
-  doc.setTextColor(50, 50, 50)
+  doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
   const subtitle = (agreementConfig as { subtitle?: string }).subtitle || "Accelerated Pathways Career College"
   doc.text(subtitle, margin, y)
   y += 7
@@ -133,37 +136,103 @@ export async function generatePDF(
 
     doc.setFontSize(10)
     doc.setFont("helvetica", "bold")
-    doc.setTextColor(50, 50, 50)
+    doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
     doc.text(section.heading, margin, y)
     y += 6
 
     y = renderSectionContent(doc, section.content, margin, contentWidth, y, pageHeight)
     y += SECTION_SPACING
 
-    // Section 7: CSR-only table (Start Date, Starting Program, Tuition, Notes) — same alignment as original
+    // Section 7: CSR-only table — 3 cols (Start Date, Starting Program, Tuition) then full-width Notes with ruled lines; alignment for CSR to fill
     if (section.csrTableOnPdf) {
-      if (y > pageHeight - 35) {
+      if (y > pageHeight - 55) {
         doc.addPage()
         y = margin
       }
-      const colW = contentWidth / 4
-      const rowH = 8
+      const colCount = 3
+      const colW = contentWidth / colCount
+      const headerRowH = 7
+      const dataRowH = 8
       const tableY = y
+
+      // Row 1: Headers (Start Date | Starting Program | Tuition) — theme color, light grey background
+      doc.setFillColor(240, 240, 240)
+      doc.rect(margin, tableY, contentWidth, headerRowH, "F")
       doc.setFont("helvetica", "bold")
       doc.setFontSize(9)
-      doc.setTextColor(60, 60, 60)
-      doc.text("Start Date", margin, tableY + 5)
-      doc.text("Starting Program", margin + colW, tableY + 5)
-      doc.text("Tuition", margin + colW * 2, tableY + 5)
-      doc.text("Notes", margin + colW * 3, tableY + 5)
+      doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
+      doc.text("Start Date", margin + colW * 0 + colW / 2, tableY + 4, { align: "center" })
+      doc.text("Starting Program", margin + colW * 1 + colW / 2, tableY + 4, { align: "center" })
+      doc.text("Tuition", margin + colW * 2 + colW / 2, tableY + 4, { align: "center" })
       doc.setDrawColor(180, 180, 180)
       doc.setLineWidth(0.2)
-      doc.rect(margin, tableY, contentWidth, rowH)
-      doc.line(margin + colW, tableY, margin + colW, tableY + rowH)
-      doc.line(margin + colW * 2, tableY, margin + colW * 2, tableY + rowH)
-      doc.line(margin + colW * 3, tableY, margin + colW * 3, tableY + rowH)
-      doc.line(margin, tableY + rowH, margin + contentWidth, tableY + rowH)
-      y = tableY + rowH + 8
+      doc.rect(margin, tableY, contentWidth, headerRowH)
+      doc.line(margin + colW, tableY, margin + colW, tableY + headerRowH)
+      doc.line(margin + colW * 2, tableY, margin + colW * 2, tableY + headerRowH)
+
+      // Row 2: Data row — underlines for CSR to fill; if adminData has values, draw them at same alignment
+      const dataY = tableY + headerRowH
+      doc.line(margin, dataY, margin + contentWidth, dataY)
+      doc.line(margin + colW, dataY, margin + colW, dataY + dataRowH)
+      doc.line(margin + colW * 2, dataY, margin + colW * 2, dataY + dataRowH)
+      doc.rect(margin, dataY, contentWidth, dataRowH)
+      const lineY = dataY + dataRowH - 2
+      doc.setDrawColor(0, 0, 0)
+      doc.line(margin + 4, lineY, margin + colW - 4, lineY)
+      doc.line(margin + colW + 4, lineY, margin + colW * 2 - 4, lineY)
+      doc.line(margin + colW * 2 + 4, lineY, margin + contentWidth - 4, lineY)
+      doc.setDrawColor(180, 180, 180)
+      // CSR-filled values (same alignment as underlines)
+      if (adminData) {
+        doc.setFont("helvetica", "normal")
+        doc.setFontSize(9)
+        doc.setTextColor(0, 0, 0)
+        const pad = 4
+        if (adminData.startDate)
+          doc.text(adminData.startDate, margin + colW / 2, lineY - 1, { align: "center" })
+        if (adminData.startingProgram)
+          doc.text(adminData.startingProgram, margin + colW + (colW / 2), lineY - 1, {
+            align: "center",
+          })
+        if (adminData.tuition)
+          doc.text(adminData.tuition, margin + colW * 2 + (colW / 2), lineY - 1, {
+            align: "center",
+          })
+      }
+
+      // Notes header row (full width) — light grey background
+      const notesHeaderY = dataY + dataRowH
+      doc.setFillColor(240, 240, 240)
+      doc.rect(margin, notesHeaderY, contentWidth, 6, "F")
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(9)
+      doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
+      doc.text("Notes", margin + 3, notesHeaderY + 4)
+      doc.setDrawColor(180, 180, 180)
+      doc.rect(margin, notesHeaderY, contentWidth, 6)
+      doc.line(margin, notesHeaderY, margin + contentWidth, notesHeaderY)
+
+      // Notes body: 5 ruled lines; if adminData.notes, draw text on lines
+      const notesBodyY = notesHeaderY + 6
+      const ruleSpacing = 6
+      const noteLines = adminData?.notes
+        ? adminData.notes.split(/\r?\n/).slice(0, 5)
+        : []
+      for (let i = 0; i < 5; i++) {
+        const ly = notesBodyY + 2 + i * ruleSpacing
+        doc.setDrawColor(0, 0, 0)
+        doc.line(margin + 2, ly, margin + contentWidth - 2, ly)
+        doc.setDrawColor(180, 180, 180)
+        if (noteLines[i]) {
+          doc.setFont("helvetica", "normal")
+          doc.setFontSize(9)
+          doc.setTextColor(0, 0, 0)
+          doc.text(noteLines[i], margin + 4, ly - 1, { maxWidth: contentWidth - 8 })
+        }
+      }
+      doc.rect(margin, notesHeaderY, contentWidth, 6 + 2 + 5 * ruleSpacing)
+
+      y = notesBodyY + 2 + 5 * ruleSpacing + 6
     }
   }
 
@@ -204,12 +273,13 @@ export async function generatePDF(
   )
   y += 10
 
-  doc.setDrawColor(100, 100, 100)
+  // Signatures in black (lines and labels)
+  doc.setDrawColor(0, 0, 0)
   doc.setLineWidth(0.3)
   doc.line(margin, y, margin + 70, y)
   y += 5
   doc.setFontSize(9)
-  doc.setTextColor(80, 80, 80)
+  doc.setTextColor(0, 0, 0)
   doc.text("Student's Signature", margin, y)
   y += 2
 
@@ -220,7 +290,7 @@ export async function generatePDF(
   }
   y += 32
 
-  doc.setDrawColor(100, 100, 100)
+  doc.setDrawColor(0, 0, 0)
   doc.setLineWidth(0.3)
   doc.line(margin, y, margin + 70, y)
   y += 5
@@ -238,7 +308,7 @@ export async function generatePDF(
 
   y += 8
 
-  // === APCC REPRESENTATIVE (CSR-only; not visible to student) ===
+  // === APCC REPRESENTATIVE (CSR-only); theme for heading, signatures in black ===
   if (adminData && adminSignatureDataUrl) {
     if (y > pageHeight - 60) {
       doc.addPage()
@@ -247,7 +317,7 @@ export async function generatePDF(
 
     doc.setFont("helvetica", "bold")
     doc.setFontSize(10)
-    doc.setTextColor(50, 50, 50)
+    doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
     doc.text("APCC REPRESENTATIVE", margin, y)
     y += 8
 
@@ -272,10 +342,11 @@ export async function generatePDF(
     doc.text(adminData.catalogDate || "", margin + contentWidth / 2 + 28, y)
     y += 8
 
-    doc.setDrawColor(100, 100, 100)
+    doc.setDrawColor(0, 0, 0)
     doc.setLineWidth(0.3)
     doc.line(margin, y, margin + 70, y)
     y += 5
+    doc.setTextColor(0, 0, 0)
     doc.text("APCC Representative's Signature", margin, y)
     y += 2
 

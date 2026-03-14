@@ -16,6 +16,9 @@ interface Submission {
     notes: string
     title?: string
     catalogDate?: string
+    startDate?: string
+    startingProgram?: string
+    tuition?: string
   } | null
   adminSignatureDataUrl: string | null
   submittedAt: string
@@ -45,6 +48,9 @@ export default function SubmissionDetailPage() {
   const [notes, setNotes] = useState("")
   const [adminTitle, setAdminTitle] = useState("")
   const [catalogDate, setCatalogDate] = useState("")
+  const [startDate, setStartDate] = useState("")
+  const [startingProgram, setStartingProgram] = useState("")
+  const [tuition, setTuition] = useState("")
   const [adminSignature, setAdminSignature] = useState("")
   const [formError, setFormError] = useState("")
   const [submitting, setSubmitting] = useState(false)
@@ -63,6 +69,9 @@ export default function SubmissionDetailPage() {
             setNotes(ad.notes || "")
             setAdminTitle(ad.title || "")
             setCatalogDate(ad.catalogDate || "")
+            setStartDate(ad.startDate || "")
+            setStartingProgram(ad.startingProgram || "")
+            setTuition(ad.tuition || "")
           }
         }
       })
@@ -95,6 +104,9 @@ export default function SubmissionDetailPage() {
             notes: notes.trim(),
             title: adminTitle.trim() || undefined,
             catalogDate: catalogDate.trim() || undefined,
+            startDate: startDate.trim() || undefined,
+            startingProgram: startingProgram.trim() || undefined,
+            tuition: tuition.trim() || undefined,
           },
           adminSignatureDataUrl: adminSignature,
         }),
@@ -278,8 +290,13 @@ export default function SubmissionDetailPage() {
           <div className="admin-card-body">
             <div className="admin-info-grid">
               <InfoField label="Approved By" value={submission.adminData?.adminName} />
+              <InfoField label="Start Date" value={submission.adminData?.startDate} />
+              <InfoField label="Starting Program" value={submission.adminData?.startingProgram} />
+              <InfoField label="Tuition" value={submission.adminData?.tuition} />
               {submission.adminData?.notes && (
-                <InfoField label="Notes" value={submission.adminData.notes} />
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <InfoField label="Notes" value={submission.adminData.notes} />
+                </div>
               )}
             </div>
             {submission.adminSignatureDataUrl && (
@@ -317,6 +334,56 @@ export default function SubmissionDetailPage() {
               signatures and email it to the student.
             </p>
 
+            {/* 7. Student Responsibilities — CSR fill (same layout as PDF) */}
+            <div className="admin-section7-block" style={{ marginBottom: "28px" }}>
+              <h3 className="admin-section7-heading">7. Student Responsibilities</h3>
+              <p className="admin-section7-intro">
+                Maintain good academic standing and follow all APCC attendance, conduct, and
+                institutional policies. Maintain active membership payments to retain access to
+                services.
+              </p>
+              <div className="admin-section7-table">
+                <div className="admin-section7-header-row">
+                  <span>Start Date</span>
+                  <span>Starting Program</span>
+                  <span>Tuition</span>
+                </div>
+                <div className="admin-section7-data-row">
+                  <input
+                    type="text"
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                    placeholder=""
+                    className="admin-section7-input"
+                  />
+                  <input
+                    type="text"
+                    value={startingProgram}
+                    onChange={e => setStartingProgram(e.target.value)}
+                    placeholder=""
+                    className="admin-section7-input"
+                  />
+                  <input
+                    type="text"
+                    value={tuition}
+                    onChange={e => setTuition(e.target.value)}
+                    placeholder=""
+                    className="admin-section7-input"
+                  />
+                </div>
+                <div className="admin-section7-notes-header">Notes</div>
+                <div className="admin-section7-notes-body">
+                  <textarea
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    placeholder=""
+                    rows={5}
+                    className="admin-section7-notes-input"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="admin-info-grid" style={{ marginBottom: "24px" }}>
               <div className="form-group">
                 <label htmlFor="adminName">
@@ -342,19 +409,6 @@ export default function SubmissionDetailPage() {
                   value={adminTitle}
                   onChange={e => setAdminTitle(e.target.value)}
                   placeholder="APCC Representative title"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="notes">
-                  Notes{" "}
-                  <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(optional)</span>
-                </label>
-                <input
-                  id="notes"
-                  type="text"
-                  value={notes}
-                  onChange={e => setNotes(e.target.value)}
-                  placeholder="Any remarks..."
                 />
               </div>
               <div className="form-group">

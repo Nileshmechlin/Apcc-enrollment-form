@@ -1112,6 +1112,104 @@ body::before {
   font-weight: 500;
 }
 
+/* Section 7 — Student Responsibilities (CSR fill, same layout as PDF) */
+.admin-section7-block {
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-secondary);
+}
+
+.admin-section7-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-accent);
+  margin: 0 0 10px;
+  padding: 0;
+}
+
+.admin-section7-intro {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+.admin-section7-table {
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.admin-section7-header-row {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1fr;
+  background: #f0f0f0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: 10px 12px;
+  gap: 1px;
+}
+
+.admin-section7-data-row {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr 1fr;
+  border-top: 1px solid var(--border-light);
+  gap: 0;
+}
+
+.admin-section7-input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px 8px;
+  border: none;
+  border-right: 1px solid var(--border-light);
+  border-bottom: 1px solid #ccc;
+  font-size: 0.9rem;
+  background: white;
+  outline: none;
+}
+
+.admin-section7-data-row .admin-section7-input:last-child {
+  border-right: none;
+}
+
+.admin-section7-input:focus {
+  background: var(--bg-input-focus);
+}
+
+.admin-section7-notes-header {
+  background: #f0f0f0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: 10px 12px;
+  border-top: 1px solid var(--border-light);
+}
+
+.admin-section7-notes-body {
+  border-top: 1px solid var(--border-light);
+}
+
+.admin-section7-notes-input {
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  border: none;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  resize: vertical;
+  background: white;
+  outline: none;
+  font-family: inherit;
+}
+
+.admin-section7-notes-input:focus {
+  background: var(--bg-input-focus);
+}
+
 /* Admin breadcrumb back bar */
 .admin-breadcrumb {
   display: flex;
