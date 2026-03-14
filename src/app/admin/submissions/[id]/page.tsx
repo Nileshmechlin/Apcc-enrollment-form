@@ -10,7 +10,13 @@ interface Submission {
   status: "pending" | "approved"
   formData: Record<string, string>
   signatureDataUrl: string
-  adminData: { adminName: string; notes: string } | null
+  parentSignatureDataUrl?: string | null
+  adminData: {
+    adminName: string
+    notes: string
+    title?: string
+    catalogDate?: string
+  } | null
   adminSignatureDataUrl: string | null
   submittedAt: string
   approvedAt: string | null
@@ -37,6 +43,8 @@ export default function SubmissionDetailPage() {
 
   const [adminName, setAdminName] = useState("")
   const [notes, setNotes] = useState("")
+  const [adminTitle, setAdminTitle] = useState("")
+  const [catalogDate, setCatalogDate] = useState("")
   const [adminSignature, setAdminSignature] = useState("")
   const [formError, setFormError] = useState("")
   const [submitting, setSubmitting] = useState(false)
@@ -50,8 +58,11 @@ export default function SubmissionDetailPage() {
         else {
           setSubmission(data.submission)
           if (data.submission.adminData) {
-            setAdminName(data.submission.adminData.adminName || "")
-            setNotes(data.submission.adminData.notes || "")
+            const ad = data.submission.adminData
+            setAdminName(ad.adminName || "")
+            setNotes(ad.notes || "")
+            setAdminTitle(ad.title || "")
+            setCatalogDate(ad.catalogDate || "")
           }
         }
       })
@@ -79,7 +90,12 @@ export default function SubmissionDetailPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          adminData: { adminName: adminName.trim(), notes: notes.trim() },
+          adminData: {
+            adminName: adminName.trim(),
+            notes: notes.trim(),
+            title: adminTitle.trim() || undefined,
+            catalogDate: catalogDate.trim() || undefined,
+          },
           adminSignatureDataUrl: adminSignature,
         }),
       })
@@ -187,7 +203,8 @@ export default function SubmissionDetailPage() {
             <InfoField label="Full Name" value={formData.fullName} />
             <InfoField label="Email" value={formData.email} />
             <InfoField label="Phone" value={formData.phone} />
-            <InfoField label="Course" value={formData.course} />
+            <InfoField label="Date of Birth" value={formData.dateOfBirth} />
+            <InfoField label="Parent's Name" value={formData.parentsName} />
             <InfoField label="Student ID" value={formData.studentId} />
             <InfoField label="Date" value={formData.date} />
           </div>
@@ -205,6 +222,22 @@ export default function SubmissionDetailPage() {
               />
             </div>
           </div>
+
+          {submission.parentSignatureDataUrl && (
+            <div style={{ marginTop: "24px" }}>
+              <div className="admin-info-label" style={{ marginBottom: "10px" }}>
+                Parent/Guardian Signature
+              </div>
+              <div className="admin-sig-box">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={submission.parentSignatureDataUrl}
+                  alt="Parent/guardian signature"
+                  style={{ height: "60px", display: "block" }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -218,12 +251,14 @@ export default function SubmissionDetailPage() {
         </div>
         <div className="admin-card-body">
           <div className="admin-agreement-box">
-            {agreementConfig.sections.map((section, i) => (
-              <div className="admin-agreement-section" key={i}>
-                <h3>{section.heading}</h3>
-                <p>{section.content}</p>
-              </div>
-            ))}
+            {(agreementConfig.sections as Array<{ heading: string; content: string }>).map(
+              (section, i) => (
+                <div className="admin-agreement-section" key={i}>
+                  <h3>{section.heading}</h3>
+                  <p style={{ whiteSpace: "pre-line" }}>{section.content}</p>
+                </div>
+              ),
+            )}
           </div>
         </div>
       </div>
@@ -297,6 +332,19 @@ export default function SubmissionDetailPage() {
                 />
               </div>
               <div className="form-group">
+                <label htmlFor="adminTitle">
+                  Title{" "}
+                  <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(e.g. CSR)</span>
+                </label>
+                <input
+                  id="adminTitle"
+                  type="text"
+                  value={adminTitle}
+                  onChange={e => setAdminTitle(e.target.value)}
+                  placeholder="APCC Representative title"
+                />
+              </div>
+              <div className="form-group">
                 <label htmlFor="notes">
                   Notes{" "}
                   <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(optional)</span>
@@ -307,6 +355,21 @@ export default function SubmissionDetailPage() {
                   value={notes}
                   onChange={e => setNotes(e.target.value)}
                   placeholder="Any remarks..."
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="catalogDate">
+                  Catalog Date{" "}
+                  <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>
+                    (optional — fill or edit later)
+                  </span>
+                </label>
+                <input
+                  id="catalogDate"
+                  type="text"
+                  value={catalogDate}
+                  onChange={e => setCatalogDate(e.target.value)}
+                  placeholder="Leave empty if needed later"
                 />
               </div>
             </div>

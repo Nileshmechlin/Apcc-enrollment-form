@@ -15,7 +15,6 @@ export async function GET(request: NextRequest) {
     status: s.status,
     fullName: s.formData.fullName || "",
     email: s.formData.email || "",
-    course: s.formData.course || "",
     studentId: s.formData.studentId || "",
     submittedAt: s.submittedAt,
     approvedAt: s.approvedAt,

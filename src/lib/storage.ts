@@ -4,6 +4,10 @@ import path from "path"
 export interface AdminData {
   adminName: string
   notes: string
+  /** APCC Representative title (e.g. CSR). */
+  title?: string
+  /** Catalog date; can be left empty for CSR to fill or edit later. */
+  catalogDate?: string
 }
 
 export interface Submission {
@@ -11,6 +15,8 @@ export interface Submission {
   status: "pending" | "approved"
   formData: Record<string, string>
   signatureDataUrl: string
+  /** Present when the student is a minor; omitted on older submissions. */
+  parentSignatureDataUrl?: string | null
   adminData: AdminData | null
   adminSignatureDataUrl: string | null
   submittedAt: string
@@ -57,6 +63,7 @@ function generateId(): string {
 export function saveSubmission(
   formData: Record<string, string>,
   signatureDataUrl: string,
+  parentSignatureDataUrl?: string | null,
 ): Submission {
   const submissions = readSubmissions()
   const submission: Submission = {
@@ -64,6 +71,7 @@ export function saveSubmission(
     status: "pending",
     formData,
     signatureDataUrl,
+    parentSignatureDataUrl: parentSignatureDataUrl ?? null,
     adminData: null,
     adminSignatureDataUrl: null,
     submittedAt: new Date().toISOString(),

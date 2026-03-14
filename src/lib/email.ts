@@ -13,7 +13,8 @@ export async function sendSignedAgreementEmail({
   adminName,
   adminNotes,
   pdfBuffer,
-  course,
+      dateOfBirth,
+      parentsName,
 }: {
   studentEmail: string
   studentName: string
@@ -21,7 +22,8 @@ export async function sendSignedAgreementEmail({
   adminName: string
   adminNotes?: string
   pdfBuffer: Buffer
-  course: string
+  dateOfBirth?: string
+  parentsName?: string
 }) {
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_SERVER || "smtp.gmail.com",
@@ -58,10 +60,24 @@ export async function sendSignedAgreementEmail({
             <td style="padding: 8px 12px; background: #f0edf8; font-weight: bold; color: #5838a3;">Email</td>
             <td style="padding: 8px 12px; background: #f5f3fa;">${studentEmail}</td>
           </tr>
+          ${
+            dateOfBirth
+              ? `
           <tr>
-            <td style="padding: 8px 12px; background: #f0edf8; font-weight: bold; color: #5838a3;">Course</td>
-            <td style="padding: 8px 12px; background: #f5f3fa;">${course || "N/A"}</td>
-          </tr>
+            <td style="padding: 8px 12px; background: #f0edf8; font-weight: bold; color: #5838a3;">Date of Birth</td>
+            <td style="padding: 8px 12px; background: #f5f3fa;">${dateOfBirth}</td>
+          </tr>`
+              : ""
+          }
+          ${
+            parentsName
+              ? `
+          <tr>
+            <td style="padding: 8px 12px; background: #f0edf8; font-weight: bold; color: #5838a3;">Parent's Name</td>
+            <td style="padding: 8px 12px; background: #f5f3fa;">${parentsName}</td>
+          </tr>`
+              : ""
+          }
           <tr>
             <td style="padding: 8px 12px; background: #f0edf8; font-weight: bold; color: #5838a3;">Approved by</td>
             <td style="padding: 8px 12px; background: #f5f3fa;">${adminName}</td>

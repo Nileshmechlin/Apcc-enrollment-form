@@ -43,10 +43,16 @@ export default function SuccessScreen({ formData, submissionId, onNewSubmission 
             <span className="detail-label">Email</span>
             <span className="detail-value">{formData.email}</span>
           </div>
-          {formData.course && (
+          {formData.dateOfBirth && (
             <div className="success-detail-row">
-              <span className="detail-label">Course</span>
-              <span className="detail-value">{formData.course}</span>
+              <span className="detail-label">Date of Birth</span>
+              <span className="detail-value">{formData.dateOfBirth}</span>
+            </div>
+          )}
+          {formData.parentsName && (
+            <div className="success-detail-row">
+              <span className="detail-label">Parent's Name</span>
+              <span className="detail-value">{formData.parentsName}</span>
             </div>
           )}
           <div className="success-detail-row">

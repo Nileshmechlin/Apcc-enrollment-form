@@ -456,10 +456,55 @@ body::before {
   margin-bottom: 10px;
 }
 
-.agreement-section p {
+.agreement-section p,
+.agreement-section .agreement-para {
   font-size: 0.95rem;
   color: var(--text-secondary);
   line-height: 1.7;
+}
+
+.agreement-section-content {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.agreement-section-content .agreement-para {
+  margin-bottom: 0.75em;
+}
+
+.agreement-section-content .agreement-para:last-child {
+  margin-bottom: 0;
+}
+
+/* Bullet list (➔) - same alignment as original document */
+.agreement-bullet-list {
+  list-style: none;
+  padding-left: 1.25em;
+  margin: 0.5em 0 0.75em 0;
+}
+
+.agreement-bullet-list li {
+  position: relative;
+  padding-left: 0.35em;
+  margin-bottom: 0.25em;
+}
+
+.agreement-bullet-list li::before {
+  content: "➔";
+  position: absolute;
+  left: -1.25em;
+}
+
+/* Lettered list a) b) c) d) - same alignment as original */
+.agreement-lettered-list {
+  list-style: none;
+  padding-left: 1.5em;
+  margin: 0.5em 0 0.75em 0;
+}
+
+.agreement-lettered-list li {
+  margin-bottom: 0.25em;
 }
 
 .agreement-checkbox {

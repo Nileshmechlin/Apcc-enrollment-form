@@ -6,6 +6,8 @@ export interface FormField {
   placeholder: string
   options?: string[] // For select type
   autoFill?: "date" // Auto-fill with current date
+  /** When true, field is only shown when the student is a minor (under 18). */
+  showWhenMinor?: boolean
 }
 
 /**
@@ -44,10 +46,18 @@ export const formFields: FormField[] = [
     autoFill: "date",
   },
   {
-    name: "course",
-    label: "Course / Program",
-    type: "text",
+    name: "dateOfBirth",
+    label: "Date of Birth",
+    type: "date",
     required: true,
-    placeholder: "e.g. B.Tech Computer Science",
+    placeholder: "",
+  },
+  {
+    name: "parentsName",
+    label: "Parent's Name",
+    type: "text",
+    required: false,
+    placeholder: "Full name of parent or guardian",
+    showWhenMinor: true,
   },
 ]

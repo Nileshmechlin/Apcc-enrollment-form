@@ -33,7 +33,10 @@ export default function FormWizard() {
     setCurrentStep(3)
   }
 
-  const handleSubmit = async (sigDataUrl: string) => {
+  const handleSubmit = async (
+    sigDataUrl: string,
+    parentSignatureDataUrl?: string,
+  ) => {
     setIsSubmitting(true)
     setSubmitError("")
 
@@ -44,6 +47,7 @@ export default function FormWizard() {
         body: JSON.stringify({
           formData,
           signatureDataUrl: sigDataUrl,
+          ...(parentSignatureDataUrl && { parentSignatureDataUrl }),
         }),
       })
 
@@ -116,6 +120,7 @@ export default function FormWizard() {
         )}
         {currentStep === 3 && (
           <SignatureStep
+            formData={formData}
             studentName={formData.fullName || ""}
             onBack={() => setCurrentStep(2)}
             onSubmit={handleSubmit}

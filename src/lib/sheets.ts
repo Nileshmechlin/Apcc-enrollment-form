@@ -39,7 +39,8 @@ export async function appendToSheet(formData: Record<string, string>) {
     "Last Name",
     "Email",
     "Phone",
-    "Course",
+    "Date of Birth",
+    "Parent's Name",
     "Date",
     "Signed",
     "Timestamp",
@@ -48,7 +49,7 @@ export async function appendToSheet(formData: Record<string, string>) {
   try {
     const headerCheck = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Sheet1!A1:J1",
+      range: "Sheet1!A1:L1",
     })
 
     const existingHeaders = headerCheck.data.values?.[0]
@@ -56,7 +57,7 @@ export async function appendToSheet(formData: Record<string, string>) {
       // No headers yet — insert them
       await sheets.spreadsheets.values.update({
         spreadsheetId: sheetId,
-        range: "Sheet1!A1:J1",
+        range: "Sheet1!A1:L1",
         valueInputOption: "USER_ENTERED",
         requestBody: {
           values: [headers],
@@ -67,7 +68,7 @@ export async function appendToSheet(formData: Record<string, string>) {
     // If reading fails (empty sheet), write headers
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
-      range: "Sheet1!A1:J1",
+      range: "Sheet1!A1:L1",
       valueInputOption: "USER_ENTERED",
       requestBody: {
         values: [headers],
@@ -101,7 +102,8 @@ export async function appendToSheet(formData: Record<string, string>) {
     lastName,
     formData.email || "",
     formData.phone || "",
-    formData.course || "",
+    formData.dateOfBirth || "",
+    formData.parentsName || "",
     formData.date || "",
     "Yes",
     timestamp,
@@ -109,7 +111,7 @@ export async function appendToSheet(formData: Record<string, string>) {
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
-    range: "Sheet1!A:J",
+    range: "Sheet1!A:L",
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [row],

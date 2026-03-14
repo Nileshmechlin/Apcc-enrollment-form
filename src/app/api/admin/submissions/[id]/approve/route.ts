@@ -28,12 +28,13 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     return NextResponse.json({ error: "Admin name and signature are required" }, { status: 400 })
   }
 
-  // 1. Generate PDF with both student and admin signatures
+  // 1. Generate PDF with student, optional parent, and admin signatures
   const pdfBuffer = await generatePDF(
     submission.formData,
     submission.signatureDataUrl,
     adminData,
     adminSignatureDataUrl,
+    submission.parentSignatureDataUrl ?? undefined,
   )
 
   // 2. Send emails
@@ -46,7 +47,8 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       adminName: adminData.adminName,
       adminNotes: adminData.notes || "",
       pdfBuffer,
-      course: submission.formData.course || "",
+      dateOfBirth: submission.formData.dateOfBirth || undefined,
+      parentsName: submission.formData.parentsName || undefined,
     })
   } catch (emailError) {
     console.error("[Approve] Email failed:", emailError)

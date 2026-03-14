@@ -45,13 +45,27 @@ export default function StudentDetailsForm({ initialData, onNext }: Props) {
     }
   }
 
+  const isMinor = (dateOfBirthStr: string | undefined): boolean => {
+    if (!dateOfBirthStr?.trim()) return false
+    const birth = new Date(dateOfBirthStr)
+    if (isNaN(birth.getTime())) return false
+    const today = new Date()
+    let age = today.getFullYear() - birth.getFullYear()
+    const m = today.getMonth() - birth.getMonth()
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+    return age < 18
+  }
+
   const validate = (): boolean => {
     const newErrors: Record<string, string> = {}
+    const minor = isMinor(data.dateOfBirth)
 
     formFields.forEach(field => {
+      if (field.showWhenMinor && !minor) return
       const value = data[field.name]?.trim() || ""
+      const required = field.required || (field.showWhenMinor && minor)
 
-      if (field.required && !value) {
+      if (required && !value) {
         newErrors[field.name] = `${field.label} is required`
       }
 
@@ -154,18 +168,24 @@ export default function StudentDetailsForm({ initialData, onNext }: Props) {
       </p>
 
       <div className="form-grid">
-        {formFields.map(field => (
-          <div
-            key={field.name}
-            className={`form-group ${field.name === "course" ? "full-width" : ""}`}>
-            <label htmlFor={field.name}>
-              {field.label}
-              {field.required && <span className="required">*</span>}
-            </label>
-            {renderField(field)}
-            {errors[field.name] && <span className="error-message">⚠ {errors[field.name]}</span>}
-          </div>
-        ))}
+        {formFields
+          .filter(field => !field.showWhenMinor || isMinor(data.dateOfBirth))
+          .map(field => (
+            <div
+              key={field.name}
+              className={`form-group ${field.name === "parentsName" ? "full-width" : ""}`}>
+              <label htmlFor={field.name}>
+                {field.label}
+                {(field.required || (field.showWhenMinor && isMinor(data.dateOfBirth))) && (
+                  <span className="required">*</span>
+                )}
+              </label>
+              {renderField(field)}
+              {errors[field.name] && (
+                <span className="error-message">⚠ {errors[field.name]}</span>
+              )}
+            </div>
+          ))}
       </div>
 
       <div className="button-row" style={{ justifyContent: "flex-end" }}>

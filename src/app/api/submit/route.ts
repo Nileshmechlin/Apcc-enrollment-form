@@ -4,7 +4,7 @@ import { saveSubmission } from "@/lib/storage"
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { formData, signatureDataUrl } = body
+    const { formData, signatureDataUrl, parentSignatureDataUrl } = body
 
     // Validate required fields
     if (!formData || !signatureDataUrl) {
@@ -16,7 +16,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Save submission as "pending" — no PDF, no email yet
-    const submission = saveSubmission(formData, signatureDataUrl)
+    const submission = saveSubmission(
+      formData,
+      signatureDataUrl,
+      parentSignatureDataUrl ?? null,
+    )
 
     return NextResponse.json({
       success: true,

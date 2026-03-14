@@ -6,16 +6,97 @@ interface PdfFormData {
   [key: string]: string
 }
 
+const BULLET_INDENT_MM = 6
+const LETTERED_INDENT_MM = 6
+const LINE_HEIGHT = 5
+const SECTION_SPACING = 4
+
+type SectionLike = { heading: string; content: string; csrTableOnPdf?: boolean }
+
 /**
- * Generates a signed PDF agreement document.
- * Accepts optional admin data/signature to append an approval section.
- * Returns the PDF as a Buffer.
+ * Renders section content with alignment matching the original document:
+ * - Lines starting with ➔ are indented (bullet list)
+ * - Lines starting with a) b) c) d) are indented (lettered list)
+ * Returns the new y position.
+ */
+function renderSectionContent(
+  doc: jsPDF,
+  content: string,
+  margin: number,
+  contentWidth: number,
+  startY: number,
+  pageHeight: number,
+): number {
+  let y = startY
+  const lines = content.split("\n")
+
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.setTextColor(50, 50, 50)
+
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (trimmed === "") {
+      y += 3
+      continue
+    }
+
+    if (y > pageHeight - 25) {
+      doc.addPage()
+      y = margin
+    }
+
+    const isBullet = /^➔\s*/.test(trimmed)
+    const isLettered = /^[a-d]\)\s/.test(trimmed)
+
+    if (isBullet) {
+      const text = trimmed.replace(/^➔\s*/, "")
+      const wrapped = doc.splitTextToSize("➔ " + text, contentWidth - BULLET_INDENT_MM)
+      for (const w of wrapped) {
+        if (y > pageHeight - 25) {
+          doc.addPage()
+          y = margin
+        }
+        doc.text(w, margin + BULLET_INDENT_MM, y)
+        y += LINE_HEIGHT
+      }
+    } else if (isLettered) {
+      const wrapped = doc.splitTextToSize(trimmed, contentWidth - LETTERED_INDENT_MM)
+      for (const w of wrapped) {
+        if (y > pageHeight - 25) {
+          doc.addPage()
+          y = margin
+        }
+        doc.text(w, margin + LETTERED_INDENT_MM, y)
+        y += LINE_HEIGHT
+      }
+    } else {
+      const wrapped = doc.splitTextToSize(trimmed, contentWidth)
+      for (const w of wrapped) {
+        if (y > pageHeight - 25) {
+          doc.addPage()
+          y = margin
+        }
+        doc.text(w, margin, y)
+        y += LINE_HEIGHT
+      }
+    }
+    y += 1
+  }
+
+  return y
+}
+
+/**
+ * Generates a signed PDF matching the Provisional Membership Enrollment Agreement layout.
+ * CSR-only fields (item 7 table, APCC Representative) are included on the PDF for CSR to fill.
  */
 export async function generatePDF(
   formData: PdfFormData,
   signatureDataUrl: string,
   adminData?: AdminData,
   adminSignatureDataUrl?: string,
+  parentSignatureDataUrl?: string | null,
 ): Promise<Buffer> {
   const doc = new jsPDF({
     orientation: "portrait",
@@ -29,248 +110,198 @@ export async function generatePDF(
   const contentWidth = pageWidth - margin * 2
   let y = margin
 
-  // === Header ===
-  doc.setFillColor(88, 56, 163) // Purple header bar
-  doc.rect(0, 0, pageWidth, 35, "F")
-
-  doc.setTextColor(255, 255, 255)
-  doc.setFontSize(18)
+  // === Header (match original document) ===
+  doc.setFontSize(14)
   doc.setFont("helvetica", "bold")
-  doc.text(agreementConfig.title, pageWidth / 2, 16, { align: "center" })
-
-  doc.setFontSize(10)
-  doc.setFont("helvetica", "normal")
-  doc.text(`Last Updated: ${agreementConfig.lastUpdated}`, pageWidth / 2, 26, {
-    align: "center",
-  })
-
-  y = 45
-
-  // === Student Information Box ===
-  doc.setDrawColor(200, 200, 200)
-  doc.setFillColor(248, 248, 252)
-  doc.roundedRect(margin, y, contentWidth, 45, 3, 3, "FD")
-
-  doc.setTextColor(88, 56, 163)
-  doc.setFontSize(12)
-  doc.setFont("helvetica", "bold")
-  doc.text("Student Information", margin + 6, y + 10)
-
-  doc.setTextColor(60, 60, 60)
-  doc.setFontSize(10)
-  doc.setFont("helvetica", "normal")
-
-  const infoLines: [string, string][] = []
-  if (formData.fullName) infoLines.push(["Full Name:", formData.fullName])
-  if (formData.email) infoLines.push(["Email:", formData.email])
-  if (formData.phone) infoLines.push(["Phone:", formData.phone])
-  if (formData.course) infoLines.push(["Course:", formData.course])
-  if (formData.studentId) infoLines.push(["Student ID:", formData.studentId])
-  if (formData.date) infoLines.push(["Date:", formData.date])
-
-  // Render in two columns
-  const colWidth = contentWidth / 2
-  const leftCol = infoLines.filter((_, i) => i % 2 === 0)
-  const rightCol = infoLines.filter((_, i) => i % 2 === 1)
-
-  leftCol.forEach(([label, value], i) => {
-    const lineY = y + 18 + i * 8
-    doc.setFont("helvetica", "bold")
-    doc.text(label, margin + 6, lineY)
-    doc.setFont("helvetica", "normal")
-    doc.text(value, margin + 35, lineY)
-  })
-
-  rightCol.forEach(([label, value], i) => {
-    const lineY = y + 18 + i * 8
-    doc.setFont("helvetica", "bold")
-    doc.text(label, margin + colWidth + 6, lineY)
-    doc.setFont("helvetica", "normal")
-    doc.text(value, margin + colWidth + 35, lineY)
-  })
-
-  y += 55
-
-  // === Agreement Sections ===
-  doc.setTextColor(88, 56, 163)
-  doc.setFontSize(13)
-  doc.setFont("helvetica", "bold")
-  doc.text("Agreement Terms", margin, y)
-  y += 3
-
-  // Thin divider
-  doc.setDrawColor(88, 56, 163)
-  doc.setLineWidth(0.5)
-  doc.line(margin, y, margin + 40, y)
-  y += 8
-
   doc.setTextColor(50, 50, 50)
+  const subtitle = (agreementConfig as { subtitle?: string }).subtitle || "Accelerated Pathways Career College"
+  doc.text(subtitle, margin, y)
+  y += 7
 
-  for (const section of agreementConfig.sections) {
-    // Check if we need a new page
-    if (y > pageHeight - 50) {
+  doc.setFontSize(12)
+  doc.text(agreementConfig.title, margin, y)
+  y += 12
+
+  const sections = agreementConfig.sections as SectionLike[]
+
+  // === Numbered sections 1–10 ===
+  for (const section of sections) {
+    if (y > pageHeight - 40) {
       doc.addPage()
       y = margin
     }
 
-    // Section heading
     doc.setFontSize(10)
     doc.setFont("helvetica", "bold")
-    doc.setTextColor(88, 56, 163)
+    doc.setTextColor(50, 50, 50)
     doc.text(section.heading, margin, y)
     y += 6
 
-    // Section content
-    doc.setFont("helvetica", "normal")
-    doc.setTextColor(70, 70, 70)
-    doc.setFontSize(9)
+    y = renderSectionContent(doc, section.content, margin, contentWidth, y, pageHeight)
+    y += SECTION_SPACING
 
-    const lines = doc.splitTextToSize(section.content, contentWidth)
-    for (const line of lines) {
-      if (y > pageHeight - 30) {
+    // Section 7: CSR-only table (Start Date, Starting Program, Tuition, Notes) — same alignment as original
+    if (section.csrTableOnPdf) {
+      if (y > pageHeight - 35) {
         doc.addPage()
         y = margin
       }
-      doc.text(line, margin, y)
-      y += 5
+      const colW = contentWidth / 4
+      const rowH = 8
+      const tableY = y
+      doc.setFont("helvetica", "bold")
+      doc.setFontSize(9)
+      doc.setTextColor(60, 60, 60)
+      doc.text("Start Date", margin, tableY + 5)
+      doc.text("Starting Program", margin + colW, tableY + 5)
+      doc.text("Tuition", margin + colW * 2, tableY + 5)
+      doc.text("Notes", margin + colW * 3, tableY + 5)
+      doc.setDrawColor(180, 180, 180)
+      doc.setLineWidth(0.2)
+      doc.rect(margin, tableY, contentWidth, rowH)
+      doc.line(margin + colW, tableY, margin + colW, tableY + rowH)
+      doc.line(margin + colW * 2, tableY, margin + colW * 2, tableY + rowH)
+      doc.line(margin + colW * 3, tableY, margin + colW * 3, tableY + rowH)
+      doc.line(margin, tableY + rowH, margin + contentWidth, tableY + rowH)
+      y = tableY + rowH + 8
     }
-
-    y += 4
   }
 
-  // === Student Signature Section ===
-  if (y > pageHeight - 80) {
+  // === Signature block (match original: Student Name, Legal Guardian, Signature Dated, then signatures) ===
+  if (y > pageHeight - 70) {
     doc.addPage()
     y = margin
   }
 
-  // Divider
-  doc.setDrawColor(200, 200, 200)
-  doc.setLineWidth(0.3)
-  doc.line(margin, y, pageWidth - margin, y)
-  y += 10
-
-  doc.setTextColor(88, 56, 163)
-  doc.setFontSize(12)
-  doc.setFont("helvetica", "bold")
-  doc.text("Student Digital Signature", margin, y)
-  y += 10
-
-  // Signature image
-  try {
-    doc.addImage(signatureDataUrl, "PNG", margin, y, 80, 30)
-  } catch {
-    doc.setTextColor(150, 150, 150)
-    doc.setFontSize(10)
-    doc.text("[Signature image could not be rendered]", margin, y + 15)
-  }
-  y += 35
-
-  // Signature line
-  doc.setDrawColor(100, 100, 100)
-  doc.setLineWidth(0.3)
-  doc.line(margin, y, margin + 80, y)
-  y += 6
-
-  doc.setTextColor(70, 70, 70)
-  doc.setFontSize(9)
+  y += 4
   doc.setFont("helvetica", "normal")
-  doc.text(`Signed by: ${formData.fullName || "N/A"}`, margin, y)
-  y += 5
+  doc.setFontSize(10)
+  doc.setTextColor(50, 50, 50)
+  doc.text("Student Name:", margin, y)
+  doc.text(formData.fullName || "_________________________", margin + 45, y)
+  y += 7
+
+  doc.text("Legal Guardian's Name:", margin, y)
   doc.text(
-    `Date: ${new Date().toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    })}`,
-    margin,
+    formData.parentsName
+      ? formData.parentsName
+      : "(required if the Student is a minor)",
+    margin + 45,
     y,
   )
+  y += 7
 
-  // === Admin Approval Section (if provided) ===
+  doc.text("Signature Dated:", margin, y)
+  doc.text(
+    formData.date ||
+      new Date().toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+    margin + 45,
+    y,
+  )
+  y += 10
+
+  doc.setDrawColor(100, 100, 100)
+  doc.setLineWidth(0.3)
+  doc.line(margin, y, margin + 70, y)
+  y += 5
+  doc.setFontSize(9)
+  doc.setTextColor(80, 80, 80)
+  doc.text("Student's Signature", margin, y)
+  y += 2
+
+  try {
+    doc.addImage(signatureDataUrl, "PNG", margin, y, 70, 26)
+  } catch {
+    doc.text("[Signature]", margin, y + 10)
+  }
+  y += 32
+
+  doc.setDrawColor(100, 100, 100)
+  doc.setLineWidth(0.3)
+  doc.line(margin, y, margin + 70, y)
+  y += 5
+  doc.text("Legal Guardian's Signature (if applicable)", margin, y)
+  y += 2
+
+  if (parentSignatureDataUrl) {
+    try {
+      doc.addImage(parentSignatureDataUrl, "PNG", margin, y, 70, 26)
+    } catch {
+      doc.text("[Signature]", margin, y + 10)
+    }
+    y += 30
+  }
+
+  y += 8
+
+  // === APCC REPRESENTATIVE (CSR-only; not visible to student) ===
   if (adminData && adminSignatureDataUrl) {
-    y += 15
-
-    if (y > pageHeight - 100) {
+    if (y > pageHeight - 60) {
       doc.addPage()
       y = margin
     }
 
-    // Admin approval box
-    doc.setDrawColor(88, 56, 163)
-    doc.setFillColor(240, 238, 252)
-    doc.roundedRect(margin, y, contentWidth, 10, 2, 2, "FD")
-    doc.setTextColor(88, 56, 163)
-    doc.setFontSize(11)
     doc.setFont("helvetica", "bold")
-    doc.text("Admin Approval", margin + 6, y + 7)
-    y += 18
-
-    // Admin info
-    doc.setTextColor(60, 60, 60)
-    doc.setFontSize(9)
-    doc.setFont("helvetica", "normal")
-    doc.text(`Approved by: ${adminData.adminName}`, margin, y)
-    y += 6
-
-    if (adminData.notes) {
-      const noteLines = doc.splitTextToSize(`Notes: ${adminData.notes}`, contentWidth)
-      noteLines.forEach((line: string) => {
-        doc.text(line, margin, y)
-        y += 5
-      })
-    }
-
-    y += 6
-
-    doc.setTextColor(88, 56, 163)
     doc.setFontSize(10)
-    doc.setFont("helvetica", "bold")
-    doc.text("Admin Signature", margin, y)
+    doc.setTextColor(50, 50, 50)
+    doc.text("APCC REPRESENTATIVE", margin, y)
     y += 8
 
-    try {
-      doc.addImage(adminSignatureDataUrl, "PNG", margin, y, 80, 30)
-    } catch {
-      doc.setTextColor(150, 150, 150)
-      doc.setFontSize(9)
-      doc.text("[Admin signature could not be rendered]", margin, y + 15)
-    }
-    y += 35
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(9)
+    doc.text("Name:", margin, y)
+    doc.text(adminData.adminName || "", margin + 22, y)
+    y += 6
+
+    doc.text("Title:", margin, y)
+    doc.text(adminData.title || "", margin + 22, y)
+    y += 8
+
+    doc.text("Signature Date:", margin, y)
+    doc.text("Catalog Date:", margin + contentWidth / 2, y)
+    const sigDate = new Date().toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    })
+    doc.text(sigDate, margin + 28, y)
+    doc.text(adminData.catalogDate || "", margin + contentWidth / 2 + 28, y)
+    y += 8
 
     doc.setDrawColor(100, 100, 100)
     doc.setLineWidth(0.3)
-    doc.line(margin, y, margin + 80, y)
-    y += 6
-
-    doc.setTextColor(70, 70, 70)
-    doc.setFontSize(9)
-    doc.setFont("helvetica", "normal")
-    doc.text(`Admin: ${adminData.adminName}`, margin, y)
+    doc.line(margin, y, margin + 70, y)
     y += 5
+    doc.text("APCC Representative's Signature", margin, y)
+    y += 2
+
+    try {
+      doc.addImage(adminSignatureDataUrl, "PNG", margin, y, 70, 26)
+    } catch {
+      doc.text("[Signature]", margin, y + 10)
+    }
+    y += 30
+  }
+
+  // === Page number footers (match original "-- n of N --") ===
+  const totalPages = doc.getNumberOfPages()
+  for (let n = 1; n <= totalPages; n++) {
+    doc.setPage(n)
+    doc.setFont("helvetica", "normal")
+    doc.setFontSize(8)
+    doc.setTextColor(140, 140, 140)
     doc.text(
-      `Approval Date: ${new Date().toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      })}`,
-      margin,
-      y,
+      `-- ${n} of ${totalPages} --`,
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: "center" },
     )
   }
 
-  // Footer
-  const footerY = pageHeight - 10
-  doc.setTextColor(150, 150, 150)
-  doc.setFontSize(8)
-  doc.text(
-    "This is a digitally signed document. Generated automatically.",
-    pageWidth / 2,
-    footerY,
-    { align: "center" },
-  )
-
-  // Convert to Buffer
   const arrayBuffer = doc.output("arraybuffer")
   return Buffer.from(arrayBuffer)
 }

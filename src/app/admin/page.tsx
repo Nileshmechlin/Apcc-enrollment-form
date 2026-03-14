@@ -8,7 +8,6 @@ interface SubmissionSummary {
   status: "pending" | "approved"
   fullName: string
   email: string
-  course: string
   studentId: string
   submittedAt: string
 }
@@ -90,7 +89,6 @@ export default function AdminDashboard() {
                 <tr>
                   <th>Student</th>
                   <th>Email</th>
-                  <th>Course</th>
                   <th>Submitted</th>
                   <th>Status</th>
                   <th></th>
@@ -120,9 +118,6 @@ export default function AdminDashboard() {
                     </td>
                     <td style={{ fontSize: "0.88rem", color: "var(--text-secondary)" }}>
                       {s.email}
-                    </td>
-                    <td style={{ fontSize: "0.88rem", color: "var(--text-secondary)" }}>
-                      {s.course || "—"}
                     </td>
                     <td
                       style={{
