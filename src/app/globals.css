@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Caveat:wght@400;600&display=swap");
+@import "react-phone-number-input/style.css";
 
 :root {
   /* Colors - Light Theme */
@@ -310,6 +311,69 @@ body::before {
   font-size: 1rem;
   transition: all var(--transition-fast);
   outline: none;
+}
+
+.form-group .phone-input {
+  width: 100%;
+}
+
+.form-group .phone-input.PhoneInput {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-group .phone-input .PhoneInputCountry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 46px;
+  background: var(--bg-input);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+}
+
+.form-group .phone-input .PhoneInputCountrySelect {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.form-group .phone-input .PhoneInputCountryIcon {
+  width: 22px;
+  height: 16px;
+  border-radius: 3px;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.form-group .phone-input .PhoneInputInput {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-input);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: "Inter", sans-serif;
+  font-size: 1rem;
+  transition: all var(--transition-fast);
+  outline: none;
+}
+
+.form-group .phone-input.error .PhoneInputInput {
+  border-color: var(--error-color);
+  background: #fff;
+  box-shadow: 0 0 0 1px var(--error-color);
+}
+
+.form-group .phone-input .PhoneInputInput:focus {
+  background: var(--bg-input-focus);
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 4px var(--accent-light);
 }
 
 .form-group input::placeholder {

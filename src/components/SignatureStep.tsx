@@ -33,6 +33,7 @@ export default function SignatureStep({
   error,
 }: Props) {
   const isMinorStudent = isMinor(formData.dateOfBirth)
+  const parentNameValid = !isMinorStudent || !!formData.parentsName?.trim()
 
   const [mode, setMode] = useState<SignatureMode>("draw")
   const [typedSignature, setTypedSignature] = useState("")
@@ -207,6 +208,7 @@ export default function SignatureStep({
     const dataUrl = getSignatureDataUrl()
     if (!dataUrl) return
     if (isMinorStudent) {
+      if (!formData.parentsName?.trim()) return
       const parentUrl = getParentSignatureDataUrl()
       if (!parentUrl) return
       onSubmit(dataUrl, parentUrl)
@@ -219,7 +221,7 @@ export default function SignatureStep({
   const parentValid =
     !isMinorStudent ||
     (parentMode === "draw" ? parentHasDrawnSignature : parentTypedSignature.trim().length > 0)
-  const isValid = studentValid && parentValid
+  const isValid = studentValid && parentValid && parentNameValid
 
   return (
     <div>
@@ -316,6 +318,17 @@ export default function SignatureStep({
             {formData.parentsName && (
               <span className="detail-value" style={{ display: "block", marginTop: "4px" }}>
                 Signing as: {formData.parentsName}
+              </span>
+            )}
+            {!formData.parentsName?.trim() && (
+              <span
+                style={{
+                  display: "block",
+                  marginTop: "8px",
+                  color: "var(--error-color)",
+                  fontWeight: 600,
+                }}>
+                Parent/Guardian name is required (go back and fill it in).
               </span>
             )}
           </p>

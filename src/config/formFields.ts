@@ -35,7 +35,7 @@ export const formFields: FormField[] = [
     label: "Phone Number",
     type: "tel",
     required: true,
-    placeholder: "(555) 555-5555",
+    placeholder: "Enter your phone number",
   },
   {
     name: "date",

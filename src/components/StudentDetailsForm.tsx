@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { formFields, type FormField } from "@/config/formFields"
 import type { FormData } from "./FormWizard"
+import PhoneInput, { isValidPhoneNumber } from "react-phone-number-input"
 
 interface Props {
   initialData: FormData
@@ -25,17 +26,8 @@ export default function StudentDetailsForm({ initialData, onNext }: Props) {
     })
   }, [])
 
-  // Auto-format phone number into (XXX) XXX-XXXX
-  const formatPhoneNumber = (value: string): string => {
-    const digits = value.replace(/\D/g, "").slice(0, 10)
-    if (digits.length <= 3) return digits.length ? `(${digits}` : ""
-    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`
-  }
-
   const handleChange = (name: string, value: string) => {
-    const formatted = name === "phone" ? formatPhoneNumber(value) : value
-    setData(prev => ({ ...prev, [name]: formatted }))
+    setData(prev => ({ ...prev, [name]: value }))
     if (errors[name]) {
       setErrors(prev => {
         const copy = { ...prev }
@@ -73,6 +65,13 @@ export default function StudentDetailsForm({ initialData, onNext }: Props) {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
         if (!emailRegex.test(value)) {
           newErrors[field.name] = "Please enter a valid email address"
+        }
+      }
+
+      if (field.type === "tel" && value) {
+        // Store phone in E.164 format via PhoneInput; validate internationally
+        if (!isValidPhoneNumber(value)) {
+          newErrors[field.name] = "Please enter a valid phone number"
         }
       }
     })
@@ -118,33 +117,15 @@ export default function StudentDetailsForm({ initialData, onNext }: Props) {
 
     if (field.type === "tel") {
       return (
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "0 12px",
-              height: "46px",
-              background: "var(--bg-input)", // Matches input bg from globals.css
-              border: "1px solid transparent", // Matches input border
-              borderRadius: "var(--radius-md)",
-              color: "var(--text-muted)",
-              fontSize: "0.95rem",
-              fontWeight: 500,
-            }}>
-            +1
-          </div>
-          <input
-            id={field.name}
-            type="tel"
-            value={data[field.name] || ""}
-            onChange={e => handleChange(field.name, e.target.value)}
-            placeholder={field.placeholder}
-            className={errors[field.name] ? "error" : ""}
-            style={{ flex: 1 }}
-          />
-        </div>
+        <PhoneInput
+          id={field.name}
+          international
+          defaultCountry={undefined}
+          value={data[field.name] || ""}
+          onChange={v => handleChange(field.name, v || "")}
+          placeholder={field.placeholder}
+          className={`phone-input ${errors[field.name] ? "error" : ""}`}
+        />
       )
     }
 
