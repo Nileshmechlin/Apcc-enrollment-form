@@ -275,8 +275,8 @@ export default function SubmissionDetailPage() {
         </div>
       </div>
 
-      {/* ── 3. Admin Approval or read-only ── */}
-      {isAlreadyApproved ? (
+      {/* ── 3. Admin Approval / Edit & download ── */}
+      {isAlreadyApproved && (
         <div className="admin-card">
           <div className="admin-card-header">
             <h2>Approval Details</h2>
@@ -316,7 +316,10 @@ export default function SubmissionDetailPage() {
             )}
           </div>
         </div>
-      ) : (
+      )}
+
+      {/* Admin Approval form (used for initial approval and post-approval edits) */}
+      {!isAlreadyApproved ? (
         <div className="admin-card">
           <div className="admin-card-header">
             <h2>Admin Approval</h2>
@@ -335,7 +338,7 @@ export default function SubmissionDetailPage() {
             </p>
 
             {/* 7. Student Responsibilities — CSR fill (same layout as PDF) */}
-            <div className="admin-section7-block" style={{ marginBottom: "28px" }}>
+            <div className="admin-section7-block" style={{ marginBottom: "28px", padding: "16px" }}>
               <h3 className="admin-section7-heading">7. Student Responsibilities</h3>
               <p className="admin-section7-intro">
                 Maintain good academic standing and follow all APCC attendance, conduct, and
@@ -350,10 +353,9 @@ export default function SubmissionDetailPage() {
                 </div>
                 <div className="admin-section7-data-row">
                   <input
-                    type="text"
+                    type="date"
                     value={startDate}
                     onChange={e => setStartDate(e.target.value)}
-                    placeholder=""
                     className="admin-section7-input"
                   />
                   <input
@@ -420,7 +422,7 @@ export default function SubmissionDetailPage() {
                 </label>
                 <input
                   id="catalogDate"
-                  type="text"
+                  type="date"
                   value={catalogDate}
                   onChange={e => setCatalogDate(e.target.value)}
                   placeholder="Leave empty if needed later"
@@ -471,6 +473,175 @@ export default function SubmissionDetailPage() {
                 disabled={submitting}
                 style={{ minWidth: "220px" }}>
                 {submitting ? "Sending..." : "Approve & Send Email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="admin-card">
+          <div className="admin-card-header">
+            <h2>Edit & Download Updated PDF</h2>
+          </div>
+          <div className="admin-card-body">
+            <p
+              style={{
+                margin: "0 0 28px",
+                fontSize: "0.88rem",
+                color: "var(--text-muted)",
+                lineHeight: 1.6,
+              }}>
+              Update Section 7 details, notes, and catalog date below. Clicking{" "}
+              <strong>Save &amp; Download Updated PDF</strong> will save these changes and open the
+              latest agreement PDF in a new tab. No email will be sent.
+            </p>
+
+            {/* Reuse Section 7 block */}
+            <div className="admin-section7-block" style={{ marginBottom: "28px", padding: "16px" }}>
+              <h3 className="admin-section7-heading">7. Student Responsibilities</h3>
+              <p className="admin-section7-intro">
+                Maintain good academic standing and follow all APCC attendance, conduct, and
+                institutional policies. Maintain active membership payments to retain access to
+                services.
+              </p>
+              <div className="admin-section7-table">
+                <div className="admin-section7-header-row">
+                  <span>Start Date</span>
+                  <span>Starting Program</span>
+                  <span>Tuition</span>
+                </div>
+                <div className="admin-section7-data-row">
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={e => setStartDate(e.target.value)}
+                    className="admin-section7-input"
+                  />
+                  <input
+                    type="text"
+                    value={startingProgram}
+                    onChange={e => setStartingProgram(e.target.value)}
+                    className="admin-section7-input"
+                  />
+                  <input
+                    type="text"
+                    value={tuition}
+                    onChange={e => setTuition(e.target.value)}
+                    className="admin-section7-input"
+                  />
+                </div>
+                <div className="admin-section7-notes-header">Notes</div>
+                <div className="admin-section7-notes-body">
+                  <textarea
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    rows={5}
+                    className="admin-section7-notes-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="admin-info-grid" style={{ marginBottom: "24px" }}>
+              <div className="form-group">
+                <label htmlFor="adminNameEdit">Your Name</label>
+                <input
+                  id="adminNameEdit"
+                  type="text"
+                  value={adminName}
+                  onChange={e => setAdminName(e.target.value)}
+                  placeholder="Full name of approver"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="adminTitleEdit">
+                  Title{" "}
+                  <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(e.g. CSR)</span>
+                </label>
+                <input
+                  id="adminTitleEdit"
+                  type="text"
+                  value={adminTitle}
+                  onChange={e => setAdminTitle(e.target.value)}
+                  placeholder="APCC Representative title"
+                />
+              </div>
+              <div className="form-group">
+                <label htmlFor="catalogDateEdit">
+                  Catalog Date{" "}
+                  <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>
+                    (optional — fill or edit later)
+                  </span>
+                </label>
+                <input
+                  id="catalogDateEdit"
+                  type="date"
+                  value={catalogDate}
+                  onChange={e => setCatalogDate(e.target.value)}
+                  placeholder="Leave empty if needed later"
+                />
+              </div>
+            </div>
+
+            {formError && (
+              <div
+                style={{
+                  marginTop: "16px",
+                  padding: "12px 16px",
+                  background: "var(--error-bg)",
+                  borderRadius: "var(--radius-md)",
+                  color: "var(--error-color)",
+                  fontSize: "0.88rem",
+                }}>
+                {formError}
+              </div>
+            )}
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                marginTop: "28px",
+                paddingTop: "20px",
+                borderTop: "1px solid var(--border-light)",
+              }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={async () => {
+                  setSubmitting(true)
+                  setFormError("")
+                  try {
+                    const res = await fetch(`/api/admin/submissions/${id}/admin-data`, {
+                      method: "PUT",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        adminData: {
+                          adminName: adminName.trim(),
+                          notes: notes.trim(),
+                          title: adminTitle.trim() || undefined,
+                          catalogDate: catalogDate.trim() || undefined,
+                          startDate: startDate.trim() || undefined,
+                          startingProgram: startingProgram.trim() || undefined,
+                          tuition: tuition.trim() || undefined,
+                        },
+                      }),
+                    })
+                    const data = await res.json()
+                    if (!res.ok) {
+                      setFormError(data.error || "Update failed")
+                    } else {
+                      setSubmission(data.submission)
+                      window.open(`/api/admin/submissions/${id}/pdf`, "_blank")
+                    }
+                  } catch {
+                    setFormError("Something went wrong. Please try again.")
+                  } finally {
+                    setSubmitting(false)
+                  }
+                }}
+                disabled={submitting}
+                style={{ minWidth: "260px" }}>
+                {submitting ? "Saving..." : "Save & Download Updated PDF"}
               </button>
             </div>
           </div>

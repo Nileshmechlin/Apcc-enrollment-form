@@ -69,7 +69,7 @@ export default function SignatureStep({
 
     const pad = new SignaturePad(canvas, {
       backgroundColor: "rgba(0, 0, 0, 0)",
-      penColor: "#4f46e5",
+      penColor: "#000000",
       minWidth: 1.5,
       maxWidth: 3,
     })
@@ -127,7 +127,7 @@ export default function SignatureStep({
     if (ctx) ctx.scale(ratio, ratio)
     const pad = new SignaturePad(canvas, {
       backgroundColor: "rgba(0, 0, 0, 0)",
-      penColor: "#4f46e5",
+      penColor: "#000000",
       minWidth: 1.5,
       maxWidth: 3,
     })
@@ -174,7 +174,7 @@ export default function SignatureStep({
       ctx.fillStyle = "transparent"
       ctx.fillRect(0, 0, 600, 150)
       ctx.font = "48px Caveat, cursive"
-      ctx.fillStyle = "#4f46e5"
+      ctx.fillStyle = "#000000"
       ctx.textAlign = "center"
       ctx.textBaseline = "middle"
       ctx.fillText(typedSignature, 300, 75)
@@ -197,7 +197,7 @@ export default function SignatureStep({
     ctx.fillStyle = "transparent"
     ctx.fillRect(0, 0, 600, 150)
     ctx.font = "48px Caveat, cursive"
-    ctx.fillStyle = "#4f46e5"
+    ctx.fillStyle = "#000000"
     ctx.textAlign = "center"
     ctx.textBaseline = "middle"
     ctx.fillText(parentTypedSignature, 300, 75)

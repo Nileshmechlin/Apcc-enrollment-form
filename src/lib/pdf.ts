@@ -54,25 +54,38 @@ function renderSectionContent(
 
     if (isBullet) {
       const text = trimmed.replace(/^➔\s*/, "")
-      const wrapped = doc.splitTextToSize("➔ " + text, contentWidth - BULLET_INDENT_MM)
-      for (const w of wrapped) {
+      const bulletX = margin
+      const textX = margin + BULLET_INDENT_MM
+      const wrapped = doc.splitTextToSize(text, contentWidth - BULLET_INDENT_MM)
+      wrapped.forEach((w: string, index: number) => {
         if (y > pageHeight - 25) {
           doc.addPage()
           y = margin
         }
-        doc.text(w, margin + BULLET_INDENT_MM, y)
+        // Arrow only on first line; subsequent lines align with text
+        if (index === 0) {
+          doc.text("➔", bulletX, y)
+        }
+        doc.text(w, textX, y)
         y += LINE_HEIGHT
-      }
+      })
     } else if (isLettered) {
-      const wrapped = doc.splitTextToSize(trimmed, contentWidth - LETTERED_INDENT_MM)
-      for (const w of wrapped) {
+      const label = trimmed.slice(0, 2) // "a)"
+      const rest = trimmed.slice(2).trimStart()
+      const labelX = margin
+      const textX = margin + LETTERED_INDENT_MM
+      const wrapped = doc.splitTextToSize(rest, contentWidth - LETTERED_INDENT_MM)
+      wrapped.forEach((w: string, index: number) => {
         if (y > pageHeight - 25) {
           doc.addPage()
           y = margin
         }
-        doc.text(w, margin + LETTERED_INDENT_MM, y)
+        if (index === 0) {
+          doc.text(label, labelX, y)
+        }
+        doc.text(w, textX, y)
         y += LINE_HEIGHT
-      }
+      })
     } else {
       const wrapped = doc.splitTextToSize(trimmed, contentWidth)
       for (const w of wrapped) {
@@ -116,28 +129,29 @@ export async function generatePDF(
   const subtitle =
     (agreementConfig as { subtitle?: string }).subtitle || "Accelerated Pathways Career College"
 
-  // === Header (format like agreement-nilesh-vijay.pdf) ===
+  // === Header: full-width theme band with centered white title ===
+  const headerHeight = 26
+  doc.setFillColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
+  doc.rect(0, 0, pageWidth, headerHeight, "F")
+
   doc.setFont("helvetica", "bold")
-  doc.setFontSize(13)
-  doc.setTextColor(30, 30, 30)
-  doc.text(`${subtitle} Enrollment Agreement`, margin, y)
-  y += 7
+  doc.setFontSize(14)
+  doc.setTextColor(255, 255, 255)
+  doc.text(`${subtitle} Enrollment Agreement`, pageWidth / 2, headerHeight / 2 + 3, {
+    align: "center",
+  })
+
+  // Move below band
+  y = headerHeight + 8
 
   doc.setFont("helvetica", "normal")
   doc.setFontSize(9)
-  doc.setTextColor(70, 70, 70)
+  doc.setTextColor(80, 80, 80)
   const lastUpdated =
     agreementConfig.lastUpdated?.trim() ||
     new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })
-  doc.text(`Last Updated: ${lastUpdated}`, margin, y)
-  y += 9
-
-  // === Student Information ===
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(10)
-  doc.setTextColor(30, 30, 30)
-  doc.text("Student Information", margin, y)
-  y += 7
+  doc.text(`Last Updated: ${lastUpdated}`, pageWidth / 2, y, { align: "center" })
+  y += 10
 
   const isMinorStudent = (() => {
     const dob = formData.dateOfBirth
@@ -151,39 +165,92 @@ export async function generatePDF(
     return age < 18
   })()
 
-  doc.setFont("helvetica", "normal")
-  doc.setFontSize(9)
-  doc.setTextColor(50, 50, 50)
-  const infoRows: Array<[string, string]> = [
+  // === Student Information card (two-column layout) ===
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(10)
+  doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
+  doc.text("Student Information", margin, y)
+  y += 4
+
+  const cardX = margin
+  const cardY = y
+  const cardW = contentWidth
+  const rowHeight = 6
+
+  const leftRows: Array<[string, string]> = [
     ["Full Name:", formData.fullName || ""],
     ["Phone:", formData.phone || ""],
     ["Is Minor:", isMinorStudent ? "Yes" : "No"],
     ["Student ID:", formData.studentId || ""],
-    ["Email:", formData.email || ""],
   ]
-  if (isMinorStudent) infoRows.push(["Guardian Name:", formData.parentsName || ""])
-  if (formData.date) infoRows.push(["Date:", formData.date || ""])
 
-  const labelW = 30
-  for (const [label, value] of infoRows) {
-    if (!value?.trim()) continue
-    if (y > pageHeight - 25) {
-      doc.addPage()
-      y = margin
+  const rightRows: Array<[string, string]> = [
+    ["Email:", formData.email || ""],
+    ["Course:", formData.course || ""],
+    ["Guardian Name:", isMinorStudent ? formData.parentsName || "" : ""],
+    ["Date:", formData.date || ""],
+  ]
+
+  const visibleRows = Math.max(
+    leftRows.filter(([, v]) => v?.trim()).length,
+    rightRows.filter(([, v]) => v?.trim()).length,
+  )
+  const rows = Math.max(visibleRows, 1)
+  const cardHeight = rows * rowHeight + 18
+
+  // Card background
+  doc.setFillColor(248, 249, 252)
+  doc.setDrawColor(225, 227, 234)
+  // roundedRect is available in jsPDF
+  ;(doc as any).roundedRect(cardX, cardY, cardW, cardHeight, 3, 3, "FD")
+
+  // Content inside card
+  let infoY = cardY + 10
+  const leftLabelX = cardX + 8
+  const leftValueX = leftLabelX + 30
+  const rightLabelX = cardX + cardW / 2 + 8
+  const rightValueX = rightLabelX + 32
+
+  doc.setFontSize(9)
+  doc.setTextColor(50, 50, 50)
+
+  for (let i = 0; i < rows; i++) {
+    const [lLabel, lVal] = leftRows[i] || ["", ""]
+    const [rLabel, rVal] = rightRows[i] || ["", ""]
+
+    if (lVal?.trim()) {
+      doc.setFont("helvetica", "bold")
+      doc.text(lLabel, leftLabelX, infoY)
+      doc.setFont("helvetica", "normal")
+      doc.text(lVal, leftValueX, infoY)
     }
-    doc.setFont("helvetica", "bold")
-    doc.text(label, margin, y)
-    doc.setFont("helvetica", "normal")
-    doc.text(doc.splitTextToSize(value, contentWidth - labelW), margin + labelW, y)
-    y += 6
+
+    if (rVal?.trim()) {
+      doc.setFont("helvetica", "bold")
+      doc.text(rLabel, rightLabelX, infoY)
+      doc.setFont("helvetica", "normal")
+      doc.text(rVal, rightValueX, infoY)
+    }
+
+    infoY += rowHeight
   }
 
-  y += 4
+  y = cardY + cardHeight + 8
+
+  // === Agreement Terms heading ===
   doc.setFont("helvetica", "bold")
   doc.setFontSize(10)
-  doc.setTextColor(30, 30, 30)
+  doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
   doc.text("Agreement Terms", margin, y)
-  y += 8
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(10)
+  doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
+  doc.text("Agreement Terms", margin, y)
+  // Gold underline under "Agreement Terms"
+  doc.setDrawColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
+  doc.setLineWidth(0.5)
+  doc.line(margin, y + 2.5, margin + 40, y + 2.5)
+  y += 10
 
   const sections = agreementConfig.sections as SectionLike[]
 
@@ -196,7 +263,7 @@ export async function generatePDF(
 
     doc.setFontSize(10)
     doc.setFont("helvetica", "bold")
-    doc.setTextColor(30, 30, 30)
+    doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
     doc.text(section.heading, margin, y)
     y += 6
 
@@ -330,41 +397,45 @@ export async function generatePDF(
     margin + 45,
     y,
   )
-  y += 10
+  y += 12
 
-  // Signatures in black (lines and labels)
+  // Signatures in black (lines and labels), aligned side by side
+  const sigColWidth = contentWidth / 2
+  const studentX = margin
+  const guardianX = margin + sigColWidth
+  const lineWidth = 60
+
   doc.setDrawColor(0, 0, 0)
   doc.setLineWidth(0.3)
-  doc.line(margin, y, margin + 70, y)
+
+  // Top lines
+  doc.line(studentX, y, studentX + lineWidth, y)
+  doc.line(guardianX, y, guardianX + lineWidth, y)
   y += 5
+
   doc.setFontSize(9)
   doc.setTextColor(0, 0, 0)
-  doc.text("Student's Signature", margin, y)
-  y += 2
+  doc.text("Student's Signature", studentX, y)
+  doc.text("Legal Guardian's Signature (if applicable)", guardianX, y)
+  y += 3
 
+  // Signature images aligned under each line
+  const imgY = y
   try {
-    doc.addImage(signatureDataUrl, "PNG", margin, y, 70, 26)
+    doc.addImage(signatureDataUrl, "PNG", studentX, imgY, lineWidth, 20)
   } catch {
-    doc.text("[Signature]", margin, y + 10)
+    doc.text("[Signature]", studentX, imgY + 10)
   }
-  y += 32
-
-  doc.setDrawColor(0, 0, 0)
-  doc.setLineWidth(0.3)
-  doc.line(margin, y, margin + 70, y)
-  y += 5
-  doc.text("Legal Guardian's Signature (if applicable)", margin, y)
-  y += 2
 
   if (parentSignatureDataUrl) {
     try {
-      doc.addImage(parentSignatureDataUrl, "PNG", margin, y, 70, 26)
+      doc.addImage(parentSignatureDataUrl, "PNG", guardianX, imgY, lineWidth, 20)
     } catch {
-      doc.text("[Signature]", margin, y + 10)
+      doc.text("[Signature]", guardianX, imgY + 10)
     }
-    y += 30
   }
 
+  y = imgY + 26
   y += 8
 
   // === APCC REPRESENTATIVE (CSR-only); theme for heading, signatures in black ===
