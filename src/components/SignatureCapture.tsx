@@ -38,7 +38,7 @@ export default function SignatureCapture({ onCapture }: Props) {
           ctx.fillStyle = "transparent"
           ctx.fillRect(0, 0, 600, 150)
           ctx.font = "48px Caveat, cursive"
-          ctx.fillStyle = "#4f46e5"
+          ctx.fillStyle = "#000000"
           ctx.textAlign = "center"
           ctx.textBaseline = "middle"
           ctx.fillText(typedName, 300, 75)
@@ -70,7 +70,7 @@ export default function SignatureCapture({ onCapture }: Props) {
 
     const pad = new SignaturePad(canvas, {
       backgroundColor: "rgba(0,0,0,0)",
-      penColor: "#4f46e5",
+      penColor: "#000000",
       minWidth: 1.5,
       maxWidth: 3,
     })

@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf"
 import { agreementConfig } from "@/config/agreement"
 import type { AdminData } from "@/lib/storage"
+import { PNG } from "pngjs"
 
 interface PdfFormData {
   [key: string]: string
@@ -15,6 +16,77 @@ const SECTION_SPACING = 4
 const THEME_RGB = { r: 166, g: 128, b: 69 }
 
 type SectionLike = { heading: string; content: string; csrTableOnPdf?: boolean }
+
+function setThemeText(doc: jsPDF) {
+  doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
+}
+
+function drawThemedHeading(
+  doc: jsPDF,
+  text: string,
+  x: number,
+  y: number,
+  underlineMaxWidth = 90,
+) {
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(10)
+  setThemeText(doc)
+  doc.text(text, x, y)
+  doc.setDrawColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
+  doc.setLineWidth(0.45)
+  const w = Math.min(doc.getTextWidth(text), underlineMaxWidth)
+  doc.line(x, y + 2.5, x + w, y + 2.5)
+}
+
+function drawBulletArrow(doc: jsPDF, x: number, baselineY: number) {
+  // Draw a small right-pointing arrow as vector (font-independent).
+  // baselineY is the text baseline; arrow is vertically centered around it.
+  const centerY = baselineY - 1.1
+  const shaftLen = 3.2
+  const headW = 1.6
+  const headH = 1.6
+
+  doc.setDrawColor(30, 30, 30)
+  doc.setLineWidth(0.35)
+  // shaft
+  doc.line(x, centerY, x + shaftLen, centerY)
+  // head
+  doc.triangle(
+    x + shaftLen,
+    centerY - headH / 2,
+    x + shaftLen,
+    centerY + headH / 2,
+    x + shaftLen + headW,
+    centerY,
+    "F",
+  )
+}
+
+function looksLikePngDataUrl(dataUrl: string): boolean {
+  return /^data:image\/png;base64,/i.test(dataUrl)
+}
+
+function forcePngInkToBlack(dataUrl: string): string {
+  try {
+    if (!looksLikePngDataUrl(dataUrl)) return dataUrl
+    const base64 = dataUrl.split(",")[1] || ""
+    const buffer = Buffer.from(base64, "base64")
+    const png = PNG.sync.read(buffer)
+    const d = png.data
+    // Convert any non-transparent pixel to black (keep alpha)
+    for (let i = 0; i < d.length; i += 4) {
+      const a = d[i + 3]
+      if (a === 0) continue
+      d[i] = 0
+      d[i + 1] = 0
+      d[i + 2] = 0
+    }
+    const out = PNG.sync.write(png)
+    return `data:image/png;base64,${out.toString("base64")}`
+  } catch {
+    return dataUrl
+  }
+}
 
 /**
  * Renders section content with alignment matching the original document:
@@ -64,7 +136,10 @@ function renderSectionContent(
         }
         // Arrow only on first line; subsequent lines align with text
         if (index === 0) {
-          doc.text("➔", bulletX, y)
+          drawBulletArrow(doc, bulletX, y)
+          // reset text styling
+          doc.setFont("helvetica", "normal")
+          doc.setTextColor(50, 50, 50)
         }
         doc.text(w, textX, y)
         y += LINE_HEIGHT
@@ -81,7 +156,11 @@ function renderSectionContent(
           y = margin
         }
         if (index === 0) {
+          doc.setFont("helvetica", "bold")
+          doc.setTextColor(30, 30, 30)
           doc.text(label, labelX, y)
+          doc.setFont("helvetica", "normal")
+          doc.setTextColor(50, 50, 50)
         }
         doc.text(w, textX, y)
         y += LINE_HEIGHT
@@ -166,11 +245,8 @@ export async function generatePDF(
   })()
 
   // === Student Information card (two-column layout) ===
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(10)
-  doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
-  doc.text("Student Information", margin, y)
-  y += 4
+  drawThemedHeading(doc, "Student Information", margin, y, 70)
+  y += 6
 
   const cardX = margin
   const cardY = y
@@ -180,8 +256,7 @@ export async function generatePDF(
   const leftRows: Array<[string, string]> = [
     ["Full Name:", formData.fullName || ""],
     ["Phone:", formData.phone || ""],
-    ["Is Minor:", isMinorStudent ? "Yes" : "No"],
-    ["Student ID:", formData.studentId || ""],
+    ["Date of Birth:", formData.dateOfBirth || ""],
   ]
 
   const rightRows: Array<[string, string]> = [
@@ -235,21 +310,10 @@ export async function generatePDF(
     infoY += rowHeight
   }
 
-  y = cardY + cardHeight + 8
+  y = cardY + cardHeight + 10
 
   // === Agreement Terms heading ===
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(10)
-  doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
-  doc.text("Agreement Terms", margin, y)
-  doc.setFont("helvetica", "bold")
-  doc.setFontSize(10)
-  doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
-  doc.text("Agreement Terms", margin, y)
-  // Gold underline under "Agreement Terms"
-  doc.setDrawColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
-  doc.setLineWidth(0.5)
-  doc.line(margin, y + 2.5, margin + 40, y + 2.5)
+  drawThemedHeading(doc, "Agreement Terms", margin, y, 60)
   y += 10
 
   const sections = agreementConfig.sections as SectionLike[]
@@ -261,14 +325,12 @@ export async function generatePDF(
       y = margin
     }
 
-    doc.setFontSize(10)
-    doc.setFont("helvetica", "bold")
-    doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
-    doc.text(section.heading, margin, y)
-    y += 6
+    // Section headings: themed + underline for separation
+    drawThemedHeading(doc, section.heading, margin, y, 95)
+    y += 7
 
     y = renderSectionContent(doc, section.content, margin, contentWidth, y, pageHeight)
-    y += SECTION_SPACING
+    y += SECTION_SPACING + 1
 
     // Section 7: CSR-only table — 3 cols (Start Date, Starting Program, Tuition) then full-width Notes with ruled lines; alignment for CSR to fill
     if (section.csrTableOnPdf) {
@@ -422,14 +484,14 @@ export async function generatePDF(
   // Signature images aligned under each line
   const imgY = y
   try {
-    doc.addImage(signatureDataUrl, "PNG", studentX, imgY, lineWidth, 20)
+    doc.addImage(forcePngInkToBlack(signatureDataUrl), "PNG", studentX, imgY, lineWidth, 20)
   } catch {
     doc.text("[Signature]", studentX, imgY + 10)
   }
 
   if (parentSignatureDataUrl) {
     try {
-      doc.addImage(parentSignatureDataUrl, "PNG", guardianX, imgY, lineWidth, 20)
+      doc.addImage(forcePngInkToBlack(parentSignatureDataUrl), "PNG", guardianX, imgY, lineWidth, 20)
     } catch {
       doc.text("[Signature]", guardianX, imgY + 10)
     }
@@ -481,7 +543,7 @@ export async function generatePDF(
     y += 2
 
     try {
-      doc.addImage(adminSignatureDataUrl, "PNG", margin, y, 70, 26)
+      doc.addImage(forcePngInkToBlack(adminSignatureDataUrl), "PNG", margin, y, 70, 26)
     } catch {
       doc.text("[Signature]", margin, y + 10)
     }
