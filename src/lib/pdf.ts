@@ -113,17 +113,77 @@ export async function generatePDF(
   const contentWidth = pageWidth - margin * 2
   let y = margin
 
-  // === Header (match original document); theme #A68045 ===
-  doc.setFontSize(14)
+  const subtitle =
+    (agreementConfig as { subtitle?: string }).subtitle || "Accelerated Pathways Career College"
+
+  // === Header (format like agreement-nilesh-vijay.pdf) ===
   doc.setFont("helvetica", "bold")
-  doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
-  const subtitle = (agreementConfig as { subtitle?: string }).subtitle || "Accelerated Pathways Career College"
-  doc.text(subtitle, margin, y)
+  doc.setFontSize(13)
+  doc.setTextColor(30, 30, 30)
+  doc.text(`${subtitle} Enrollment Agreement`, margin, y)
   y += 7
 
-  doc.setFontSize(12)
-  doc.text(agreementConfig.title, margin, y)
-  y += 12
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.setTextColor(70, 70, 70)
+  const lastUpdated =
+    agreementConfig.lastUpdated?.trim() ||
+    new Date().toLocaleDateString("en-US", { month: "long", year: "numeric" })
+  doc.text(`Last Updated: ${lastUpdated}`, margin, y)
+  y += 9
+
+  // === Student Information ===
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(10)
+  doc.setTextColor(30, 30, 30)
+  doc.text("Student Information", margin, y)
+  y += 7
+
+  const isMinorStudent = (() => {
+    const dob = formData.dateOfBirth
+    if (!dob?.trim()) return false
+    const birth = new Date(dob)
+    if (isNaN(birth.getTime())) return false
+    const today = new Date()
+    let age = today.getFullYear() - birth.getFullYear()
+    const m = today.getMonth() - birth.getMonth()
+    if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--
+    return age < 18
+  })()
+
+  doc.setFont("helvetica", "normal")
+  doc.setFontSize(9)
+  doc.setTextColor(50, 50, 50)
+  const infoRows: Array<[string, string]> = [
+    ["Full Name:", formData.fullName || ""],
+    ["Phone:", formData.phone || ""],
+    ["Is Minor:", isMinorStudent ? "Yes" : "No"],
+    ["Student ID:", formData.studentId || ""],
+    ["Email:", formData.email || ""],
+  ]
+  if (isMinorStudent) infoRows.push(["Guardian Name:", formData.parentsName || ""])
+  if (formData.date) infoRows.push(["Date:", formData.date || ""])
+
+  const labelW = 30
+  for (const [label, value] of infoRows) {
+    if (!value?.trim()) continue
+    if (y > pageHeight - 25) {
+      doc.addPage()
+      y = margin
+    }
+    doc.setFont("helvetica", "bold")
+    doc.text(label, margin, y)
+    doc.setFont("helvetica", "normal")
+    doc.text(doc.splitTextToSize(value, contentWidth - labelW), margin + labelW, y)
+    y += 6
+  }
+
+  y += 4
+  doc.setFont("helvetica", "bold")
+  doc.setFontSize(10)
+  doc.setTextColor(30, 30, 30)
+  doc.text("Agreement Terms", margin, y)
+  y += 8
 
   const sections = agreementConfig.sections as SectionLike[]
 
@@ -136,7 +196,7 @@ export async function generatePDF(
 
     doc.setFontSize(10)
     doc.setFont("helvetica", "bold")
-    doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
+    doc.setTextColor(30, 30, 30)
     doc.text(section.heading, margin, y)
     y += 6
 
@@ -160,7 +220,7 @@ export async function generatePDF(
       doc.rect(margin, tableY, contentWidth, headerRowH, "F")
       doc.setFont("helvetica", "bold")
       doc.setFontSize(9)
-      doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
+      doc.setTextColor(30, 30, 30)
       doc.text("Start Date", margin + colW * 0 + colW / 2, tableY + 4, { align: "center" })
       doc.text("Starting Program", margin + colW * 1 + colW / 2, tableY + 4, { align: "center" })
       doc.text("Tuition", margin + colW * 2 + colW / 2, tableY + 4, { align: "center" })
@@ -187,7 +247,6 @@ export async function generatePDF(
         doc.setFont("helvetica", "normal")
         doc.setFontSize(9)
         doc.setTextColor(0, 0, 0)
-        const pad = 4
         if (adminData.startDate)
           doc.text(adminData.startDate, margin + colW / 2, lineY - 1, { align: "center" })
         if (adminData.startingProgram)
@@ -206,7 +265,7 @@ export async function generatePDF(
       doc.rect(margin, notesHeaderY, contentWidth, 6, "F")
       doc.setFont("helvetica", "bold")
       doc.setFontSize(9)
-      doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
+      doc.setTextColor(30, 30, 30)
       doc.text("Notes", margin + 3, notesHeaderY + 4)
       doc.setDrawColor(180, 180, 180)
       doc.rect(margin, notesHeaderY, contentWidth, 6)
@@ -317,7 +376,7 @@ export async function generatePDF(
 
     doc.setFont("helvetica", "bold")
     doc.setFontSize(10)
-    doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
+    doc.setTextColor(30, 30, 30)
     doc.text("APCC REPRESENTATIVE", margin, y)
     y += 8
 
