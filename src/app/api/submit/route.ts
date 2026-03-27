@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Save submission as "pending" — no PDF, no email yet
-    const submission = saveSubmission(
+    const submission = await saveSubmission(
       formData,
       signatureDataUrl,
       parentSignatureDataUrl ?? null,

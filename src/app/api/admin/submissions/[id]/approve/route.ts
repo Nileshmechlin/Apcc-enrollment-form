@@ -11,7 +11,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   const { id } = await params
-  const submission = getSubmissionById(id)
+  const submission = await getSubmissionById(id)
 
   if (!submission) {
     return NextResponse.json({ error: "Submission not found" }, { status: 404 })
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   }
 
   // 4. Update submission record
-  const updated = updateSubmission(id, {
+  const updated = await updateSubmission(id, {
     status: "approved",
     adminData,
     adminSignatureDataUrl,

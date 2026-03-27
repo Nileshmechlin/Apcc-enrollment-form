@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const submissions = readSubmissions()
+  const submissions = await readSubmissions()
 
   // Return lightweight list (omit heavy signature data URLs)
   const list = submissions.map(s => ({

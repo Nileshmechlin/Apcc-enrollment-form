@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Only protect /admin routes — but allow /admin/login
@@ -14,6 +14,8 @@ export function middleware(request: NextRequest) {
 
   return NextResponse.next()
 }
+
+export default proxy
 
 export const config = {
   matcher: ["/admin/:path*"],

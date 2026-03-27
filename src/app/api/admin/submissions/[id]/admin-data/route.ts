@@ -12,7 +12,7 @@ export async function PUT(
   }
 
   const { id } = await params
-  const submission = getSubmissionById(id)
+  const submission = await getSubmissionById(id)
 
   if (!submission) {
     return NextResponse.json({ error: "Submission not found" }, { status: 404 })
@@ -33,7 +33,7 @@ export async function PUT(
     ...adminData,
   }
 
-  const updated = updateSubmission(id, {
+  const updated = await updateSubmission(id, {
     adminData: mergedAdmin,
   })
 

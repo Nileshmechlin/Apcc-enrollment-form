@@ -4,7 +4,7 @@ const COOKIE_NAME = "admin_auth"
 const TOKEN_VALUE = "authenticated" // simple static token
 
 export function validateAdminPassword(password: string): boolean {
-  const adminPassword = process.env.ADMIN_PASSWORD || "admin123"
+  const adminPassword = process.env.ADMIN_PASSWORD
   return password === adminPassword
 }
 
