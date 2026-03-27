@@ -14,7 +14,7 @@ export async function GET(
   }
 
   const { id } = await params
-  const submission = getSubmissionById(id)
+  const submission = await getSubmissionById(id)
 
   if (!submission) {
     return NextResponse.json({ error: "Submission not found" }, { status: 404 })
@@ -28,7 +28,7 @@ export async function GET(
     submission.parentSignatureDataUrl ?? undefined,
   )
 
-  return new NextResponse(pdfBuffer, {
+  return new NextResponse(pdfBuffer as unknown as BodyInit, {
     status: 200,
     headers: {
       "Content-Type": "application/pdf",

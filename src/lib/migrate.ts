@@ -19,6 +19,14 @@ export async function runMigrations(): Promise<void> {
     );
   `)
 
+  // Add columns if they were missing from an older schema version
+  await pool.query(`
+    ALTER TABLE submissions
+    ADD COLUMN IF NOT EXISTS parent_signature_data_url TEXT,
+    ADD COLUMN IF NOT EXISTS admin_data JSONB,
+    ADD COLUMN IF NOT EXISTS admin_signature_data_url TEXT;
+  `)
+
   // Index for fast listing ordered by newest first
   await pool.query(`
     CREATE INDEX IF NOT EXISTS submissions_submitted_at_idx
