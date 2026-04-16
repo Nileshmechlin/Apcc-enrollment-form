@@ -293,18 +293,20 @@ export async function generatePDF(
     const [lLabel, lVal] = leftRows[i] || ["", ""]
     const [rLabel, rVal] = rightRows[i] || ["", ""]
 
+    const maxValW = (cardW / 2) - 35
+
     if (lVal?.trim()) {
       doc.setFont("helvetica", "bold")
       doc.text(lLabel, leftLabelX, infoY)
       doc.setFont("helvetica", "normal")
-      doc.text(lVal, leftValueX, infoY)
+      doc.text(lVal, leftValueX, infoY, { maxWidth: maxValW })
     }
 
     if (rVal?.trim()) {
       doc.setFont("helvetica", "bold")
       doc.text(rLabel, rightLabelX, infoY)
       doc.setFont("helvetica", "normal")
-      doc.text(rVal, rightValueX, infoY)
+      doc.text(rVal, rightValueX, infoY, { maxWidth: maxValW })
     }
 
     infoY += rowHeight
@@ -400,27 +402,22 @@ export async function generatePDF(
       doc.rect(margin, notesHeaderY, contentWidth, 6)
       doc.line(margin, notesHeaderY, margin + contentWidth, notesHeaderY)
 
-      // Notes body: 5 ruled lines; if adminData.notes, draw text on lines
+      // Notes body: Clean box without ruled lines
       const notesBodyY = notesHeaderY + 6
-      const ruleSpacing = 6
-      const noteLines = adminData?.notes
-        ? adminData.notes.split(/\r?\n/).slice(0, 5)
-        : []
-      for (let i = 0; i < 5; i++) {
-        const ly = notesBodyY + 2 + i * ruleSpacing
-        doc.setDrawColor(0, 0, 0)
-        doc.line(margin + 2, ly, margin + contentWidth - 2, ly)
-        doc.setDrawColor(180, 180, 180)
-        if (noteLines[i]) {
-          doc.setFont("helvetica", "normal")
-          doc.setFontSize(9)
-          doc.setTextColor(0, 0, 0)
-          doc.text(noteLines[i], margin + 4, ly - 1, { maxWidth: contentWidth - 8 })
-        }
+      const boxPadding = 4
+      if (adminData?.notes) {
+        doc.setFont("helvetica", "normal")
+        doc.setFontSize(9)
+        doc.setTextColor(0, 0, 0)
+        const wrappedNotes = doc.splitTextToSize(adminData.notes, contentWidth - (boxPadding * 2))
+        doc.text(wrappedNotes, margin + boxPadding, notesBodyY + boxPadding + 1)
       }
-      doc.rect(margin, notesHeaderY, contentWidth, 6 + 2 + 5 * ruleSpacing)
 
-      y = notesBodyY + 2 + 5 * ruleSpacing + 6
+      // Draw box around notes
+      doc.setDrawColor(180, 180, 180)
+      doc.rect(margin, notesHeaderY, contentWidth, 36) // Fixed height box for notes area
+
+      y = notesHeaderY + 36 + 6
     }
   }
 
