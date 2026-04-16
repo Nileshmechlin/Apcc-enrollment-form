@@ -133,3 +133,63 @@ export async function sendSignedAgreementEmail({
     ],
   })
 }
+
+/**
+ * Sends a notification email to the admin when a new form is submitted.
+ */
+export async function sendSubmissionNotification({
+  studentName,
+  studentEmail,
+  adminEmail,
+}: {
+  studentName: string
+  studentEmail: string
+  adminEmail: string
+}) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_SERVER || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT || "587", 10),
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USERNAME,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  })
+
+  const fromName = process.env.FROM_NAME || "Student Agreement Form"
+  const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USERNAME
+  const fromAddress = `"${fromName}" <${fromEmail}>`
+
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 22px;">📩 New Form Submission</h1>
+      </div>
+      <div style="background: #f9f9ff; padding: 24px; border: 1px solid #e5e5f0; border-top: none; border-radius: 0 0 12px 12px;">
+        <p style="color: #333; font-size: 15px;">Hello Admin,</p>
+        <p style="color: #555; font-size: 14px; line-height: 1.6;">
+          A student has just filled out the agreement form. Please check the dashboard to review and complete the process.
+        </p>
+        <div style="background: #ffffff; padding: 20px; border: 1px solid #eee; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0; font-size: 14px; color: #666;"><strong>Student Name:</strong> ${studentName}</p>
+          <p style="margin: 8px 0 0; font-size: 14px; color: #666;"><strong>Student Email:</strong> ${studentEmail}</p>
+          <p style="margin: 8px 0 0; font-size: 14px; color: #666;"><strong>Status:</strong> Pending Review</p>
+        </div>
+        <div style="text-align: center; margin-top: 30px;">
+          <a href="${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/admin" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">Check Dashboard</a>
+        </div>
+        <hr style="border: none; border-top: 1px solid #e5e5f0; margin: 30px 0 20px;" />
+        <p style="color: #999; font-size: 12px; text-align: center;">
+          This is an automated notification from the Student Agreement Form system.
+        </p>
+      </div>
+    </div>
+  `
+
+  await transporter.sendMail({
+    from: fromAddress,
+    to: adminEmail,
+    subject: `New Enrollment Application: ${studentName}`,
+    html: htmlBody,
+  })
+}

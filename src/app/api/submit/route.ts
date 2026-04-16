@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { saveSubmission } from "@/lib/storage"
+import { sendSubmissionNotification } from "@/lib/email"
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,6 +22,18 @@ export async function POST(request: NextRequest) {
       signatureDataUrl,
       parentSignatureDataUrl ?? null,
     )
+
+    // Send notification to admin (non-blocking if possible, but for reliability we await or use a try-catch)
+    try {
+      await sendSubmissionNotification({
+        studentName: formData.fullName,
+        studentEmail: formData.email,
+        adminEmail: process.env.ADMIN_EMAIL || "enrollment@apccollege.org",
+      })
+    } catch (emailError) {
+      // Log error but don't fail the submission
+      console.error("[Submit] Notification Error:", emailError)
+    }
 
     return NextResponse.json({
       success: true,
