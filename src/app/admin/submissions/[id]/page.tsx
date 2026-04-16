@@ -422,7 +422,7 @@ export default function SubmissionDetailPage() {
                 </label>
                 <input
                   id="catalogDate"
-                  type="date"
+                  type="text"
                   value={catalogDate}
                   onChange={e => setCatalogDate(e.target.value)}
                   placeholder="Leave empty if needed later"
@@ -574,7 +574,7 @@ export default function SubmissionDetailPage() {
                 </label>
                 <input
                   id="catalogDateEdit"
-                  type="date"
+                  type="text"
                   value={catalogDate}
                   onChange={e => setCatalogDate(e.target.value)}
                   placeholder="Leave empty if needed later"
