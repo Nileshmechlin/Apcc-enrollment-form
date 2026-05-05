@@ -17,8 +17,14 @@ interface Submission {
     title?: string
     catalogDate?: string
     startDate?: string
-    startingProgram?: string
+    endDate?: string
+    selectedProgram?: string
     tuition?: string
+    registrationFee?: string
+    classHours?: string
+    externHours?: string
+    paymentsStartingDate?: string
+    totalTuition?: string
   } | null
   adminSignatureDataUrl: string | null
   submittedAt: string
@@ -49,8 +55,15 @@ export default function SubmissionDetailPage() {
   const [adminTitle, setAdminTitle] = useState("")
   const [catalogDate, setCatalogDate] = useState("")
   const [startDate, setStartDate] = useState("")
-  const [startingProgram, setStartingProgram] = useState("")
+  const [endDate, setEndDate] = useState("")
+  const [selectedProgram, setSelectedProgram] = useState("")
   const [tuition, setTuition] = useState("")
+  const [registrationFee, setRegistrationFee] = useState("50")
+  const [classHours, setClassHours] = useState("")
+  const [externHours, setExternHours] = useState("")
+  const [paymentsStartingDate, setPaymentsStartingDate] = useState("")
+  const [totalTuition, setTotalTuition] = useState("")
+  
   const [adminSignature, setAdminSignature] = useState("")
   const [formError, setFormError] = useState("")
   const [submitting, setSubmitting] = useState(false)
@@ -70,8 +83,14 @@ export default function SubmissionDetailPage() {
             setAdminTitle(ad.title || "")
             setCatalogDate(ad.catalogDate || "")
             setStartDate(ad.startDate || "")
-            setStartingProgram(ad.startingProgram || "")
+            setEndDate(ad.endDate || "")
+            setSelectedProgram(ad.selectedProgram || "")
             setTuition(ad.tuition || "")
+            setRegistrationFee(ad.registrationFee || "50")
+            setClassHours(ad.classHours || "")
+            setExternHours(ad.externHours || "")
+            setPaymentsStartingDate(ad.paymentsStartingDate || "")
+            setTotalTuition(ad.totalTuition || "")
           }
         }
       })
@@ -105,8 +124,14 @@ export default function SubmissionDetailPage() {
             title: adminTitle.trim() || undefined,
             catalogDate: catalogDate.trim() || undefined,
             startDate: startDate.trim() || undefined,
-            startingProgram: startingProgram.trim() || undefined,
+            endDate: endDate.trim() || undefined,
+            selectedProgram: selectedProgram.trim() || undefined,
             tuition: tuition.trim() || undefined,
+            registrationFee: registrationFee.trim() || undefined,
+            classHours: classHours.trim() || undefined,
+            externHours: externHours.trim() || undefined,
+            paymentsStartingDate: paymentsStartingDate.trim() || undefined,
+            totalTuition: totalTuition.trim() || undefined,
           },
           adminSignatureDataUrl: adminSignature,
         }),
@@ -216,9 +241,14 @@ export default function SubmissionDetailPage() {
             <InfoField label="Email" value={formData.email} />
             <InfoField label="Phone" value={formData.phone} />
             <InfoField label="Date of Birth" value={formData.dateOfBirth} />
-            <InfoField label="Parent's Name" value={formData.parentsName} />
+            <InfoField label="Address" value={formData.address} />
+            <InfoField label="Emergency Contact" value={`${formData.emergencyName} (${formData.emergencyRelationship}) - ${formData.emergencyPhone}`} />
+            <InfoField label="Medical Conditions" value={formData.medicalConditions} />
+            <InfoField label="HS Diploma" value={formData.highSchoolDiploma} />
+            <InfoField label="1st Parent" value={formData.parent1Name} />
+            <InfoField label="2nd Parent" value={formData.parent2Name} />
             <InfoField label="Student ID" value={formData.studentId} />
-            <InfoField label="Date" value={formData.date} />
+            <InfoField label="Initials" value={formData.initials} />
           </div>
 
           <div style={{ marginTop: "24px" }}>
@@ -263,13 +293,30 @@ export default function SubmissionDetailPage() {
         </div>
         <div className="admin-card-body">
           <div className="admin-agreement-box">
-            {(agreementConfig.sections as Array<{ heading: string; content: string }>).map(
-              (section, i) => (
-                <div className="admin-agreement-section" key={i}>
-                  <h3>{section.heading}</h3>
-                  <p style={{ whiteSpace: "pre-line" }}>{section.content}</p>
-                </div>
-              ),
+            {(agreementConfig.pages as Array<{ number: number; content: string }>).map(
+              (page, i) => {
+                let resolvedContent = page.content;
+                Object.entries(submission.formData).forEach(([key, value]) => {
+                  const regex = new RegExp(`\\[${key}\\]`, 'gi');
+                  resolvedContent = resolvedContent.replace(regex, value || `[${key}]`);
+                });
+
+                return (
+                  <div className="admin-agreement-section" key={i}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", borderBottom: "1px solid #eee", paddingBottom: "4px" }}>
+                      <h3 style={{ margin: 0 }}>Page {page.number}</h3>
+                      <span style={{ fontSize: "0.75rem", color: "#999", fontStyle: "italic" }}>Accelerated Pathways Career College</span>
+                    </div>
+                    {page.number === 1 && (
+                      <div style={{ textAlign: "center", marginBottom: "16px" }}>
+                        <h2 style={{ fontSize: "1rem", fontWeight: 800, margin: "0 0 4px" }}>Accelerated Pathways Career College (APCC)</h2>
+                        <h3 style={{ fontSize: "0.9rem", fontWeight: 700, margin: 0 }}>Enrollment Agreement</h3>
+                      </div>
+                    )}
+                    <p style={{ whiteSpace: "pre-line" }}>{resolvedContent}</p>
+                  </div>
+                );
+              },
             )}
           </div>
         </div>
@@ -291,8 +338,14 @@ export default function SubmissionDetailPage() {
             <div className="admin-info-grid">
               <InfoField label="Approved By" value={submission.adminData?.adminName} />
               <InfoField label="Start Date" value={submission.adminData?.startDate} />
-              <InfoField label="Starting Program" value={submission.adminData?.startingProgram} />
+              <InfoField label="End Date" value={submission.adminData?.endDate} />
+              <InfoField label="Selected Program" value={submission.adminData?.selectedProgram} />
               <InfoField label="Tuition" value={submission.adminData?.tuition} />
+              <InfoField label="Reg. Fee" value={submission.adminData?.registrationFee} />
+              <InfoField label="Class Hours" value={submission.adminData?.classHours} />
+              <InfoField label="Extern Hours" value={submission.adminData?.externHours} />
+              <InfoField label="Payments Start" value={submission.adminData?.paymentsStartingDate} />
+              <InfoField label="Total Tuition" value={submission.adminData?.totalTuition} />
               {submission.adminData?.notes && (
                 <div style={{ gridColumn: "1 / -1" }}>
                   <InfoField label="Notes" value={submission.adminData.notes} />
@@ -318,340 +371,128 @@ export default function SubmissionDetailPage() {
         </div>
       )}
 
-      {/* Admin Approval form (used for initial approval and post-approval edits) */}
-      {!isAlreadyApproved ? (
-        <div className="admin-card">
-          <div className="admin-card-header">
-            <h2>Admin Approval</h2>
+      {/* Admin Approval form */}
+      <div className="admin-card">
+        <div className="admin-card-header">
+          <h2>{isAlreadyApproved ? "Edit Admin Details" : "Admin Approval"}</h2>
+        </div>
+        <div className="admin-card-body">
+          <p style={{ margin: "0 0 24px", fontSize: "0.88rem", color: "var(--text-muted)" }}>
+            {isAlreadyApproved 
+              ? "Update the agreement details below. Saving will update the records and open the revised PDF."
+              : "Fill in the enrollment details and sign below to approve the agreement and notify the student."}
+          </p>
+
+          <div className="admin-info-grid" style={{ marginBottom: "24px" }}>
+            <div className="form-group">
+              <label>Start Date</label>
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>End Date</label>
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>Selected Program</label>
+              <input type="text" value={selectedProgram} onChange={e => setSelectedProgram(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>Tuition</label>
+              <input type="text" value={tuition} onChange={e => setTuition(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>Reg. Fee</label>
+              <input type="text" value={registrationFee} onChange={e => setRegistrationFee(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>Class Hours</label>
+              <input type="text" value={classHours} onChange={e => setClassHours(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>Extern Hours</label>
+              <input type="text" value={externHours} onChange={e => setExternHours(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>Payments Start Date</label>
+              <input type="date" value={paymentsStartingDate} onChange={e => setPaymentsStartingDate(e.target.value)} />
+            </div>
+            <div className="form-group">
+              <label>Total Tuition</label>
+              <input type="text" value={totalTuition} onChange={e => setTotalTuition(e.target.value)} />
+            </div>
           </div>
-          <div className="admin-card-body">
-            <p
-              style={{
-                margin: "0 0 28px",
-                fontSize: "0.88rem",
-                color: "var(--text-muted)",
-                lineHeight: 1.6,
-              }}>
-              Fill in your details and sign below. Clicking{" "}
-              <strong>Approve &amp; Send Email</strong> will generate the final PDF with both
-              signatures and email it to the student.
-            </p>
 
-            {/* 7. Student Responsibilities — CSR fill (same layout as PDF) */}
-            <div className="admin-section7-block" style={{ marginBottom: "28px", padding: "16px" }}>
-              <h3 className="admin-section7-heading">7. Student Responsibilities</h3>
-              <p className="admin-section7-intro">
-                Maintain good academic standing and follow all APCC attendance, conduct, and
-                institutional policies. Maintain active membership payments to retain access to
-                services.
-              </p>
-              <div className="admin-section7-table">
-                <div className="admin-section7-header-row">
-                  <span>Start Date</span>
-                  <span>Starting Program</span>
-                  <span>Tuition</span>
-                </div>
-                <div className="admin-section7-data-row">
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={e => setStartDate(e.target.value)}
-                    className="admin-section7-input"
-                  />
-                  <input
-                    type="text"
-                    value={startingProgram}
-                    onChange={e => setStartingProgram(e.target.value)}
-                    placeholder=""
-                    className="admin-section7-input"
-                  />
-                  <input
-                    type="text"
-                    value={tuition}
-                    onChange={e => setTuition(e.target.value)}
-                    placeholder=""
-                    className="admin-section7-input"
-                  />
-                </div>
-                <div className="admin-section7-notes-header">Notes</div>
-                <div className="admin-section7-notes-body">
-                  <textarea
-                    value={notes}
-                    onChange={e => setNotes(e.target.value)}
-                    placeholder=""
-                    rows={5}
-                    className="admin-section7-notes-input"
-                  />
-                </div>
-              </div>
+          <div className="admin-info-grid" style={{ marginBottom: "24px" }}>
+            <div className="form-group">
+              <label>Your Name <span className="required">*</span></label>
+              <input type="text" value={adminName} onChange={e => setAdminName(e.target.value)} />
             </div>
-
-            <div className="admin-info-grid" style={{ marginBottom: "24px" }}>
-              <div className="form-group">
-                <label htmlFor="adminName">
-                  Your Name <span className="required">*</span>
-                </label>
-                <input
-                  id="adminName"
-                  type="text"
-                  value={adminName}
-                  onChange={e => setAdminName(e.target.value)}
-                  placeholder="Full name of approver"
-                  className={formError && !adminName.trim() ? "error" : ""}
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="adminTitle">
-                  Title{" "}
-                  <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(e.g. CSR)</span>
-                </label>
-                <input
-                  id="adminTitle"
-                  type="text"
-                  value={adminTitle}
-                  onChange={e => setAdminTitle(e.target.value)}
-                  placeholder="APCC Representative title"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="catalogDate">
-                  Catalog Date{" "}
-                  <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>
-                    (optional — fill or edit later)
-                  </span>
-                </label>
-                <input
-                  id="catalogDate"
-                  type="text"
-                  value={catalogDate}
-                  onChange={e => setCatalogDate(e.target.value)}
-                  placeholder="Leave empty if needed later"
-                />
-              </div>
+            <div className="form-group">
+              <label>Title (e.g. CSR)</label>
+              <input type="text" value={adminTitle} onChange={e => setAdminTitle(e.target.value)} />
             </div>
+            <div className="form-group">
+              <label>Catalog Date</label>
+              <input type="text" value={catalogDate} onChange={e => setCatalogDate(e.target.value)} />
+            </div>
+          </div>
 
-            <div style={{ marginBottom: "8px" }}>
-              <label
-                style={{
-                  display: "block",
-                  fontWeight: 500,
-                  marginBottom: "12px",
-                  fontSize: "0.9rem",
-                  color: "var(--text-secondary)",
-                }}>
-                Your Signature <span className="required">*</span>
-              </label>
+          <div className="form-group full-width">
+            <label>Notes</label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} />
+          </div>
+
+          {!isAlreadyApproved && (
+            <div style={{ marginTop: "24px" }}>
+              <label style={{ display: "block", marginBottom: "12px", fontWeight: 500 }}>Your Signature <span className="required">*</span></label>
               <SignatureCapture onCapture={handleSignatureCapture} />
             </div>
+          )}
 
-            {formError && (
-              <div
-                style={{
-                  marginTop: "16px",
-                  padding: "12px 16px",
-                  background: "var(--error-bg)",
-                  borderRadius: "var(--radius-md)",
-                  color: "var(--error-color)",
-                  fontSize: "0.88rem",
-                }}>
-                {formError}
-              </div>
-            )}
+          {formError && <p className="error-message" style={{ marginTop: "16px" }}>{formError}</p>}
 
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "28px",
-                paddingTop: "20px",
-                borderTop: "1px solid var(--border-light)",
-              }}>
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleApprove}
-                disabled={submitting}
-                style={{ minWidth: "220px" }}>
-                {submitting ? "Sending..." : "Approve & Send Email"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div className="admin-card">
-          <div className="admin-card-header">
-            <h2>Edit & Download Updated PDF</h2>
-          </div>
-          <div className="admin-card-body">
-            <p
-              style={{
-                margin: "0 0 28px",
-                fontSize: "0.88rem",
-                color: "var(--text-muted)",
-                lineHeight: 1.6,
-              }}>
-              Update Section 7 details, notes, and catalog date below. Clicking{" "}
-              <strong>Save &amp; Download Updated PDF</strong> will save these changes and open the
-              latest agreement PDF in a new tab. No email will be sent.
-            </p>
-
-            {/* Reuse Section 7 block */}
-            <div className="admin-section7-block" style={{ marginBottom: "28px", padding: "16px" }}>
-              <h3 className="admin-section7-heading">7. Student Responsibilities</h3>
-              <p className="admin-section7-intro">
-                Maintain good academic standing and follow all APCC attendance, conduct, and
-                institutional policies. Maintain active membership payments to retain access to
-                services.
-              </p>
-              <div className="admin-section7-table">
-                <div className="admin-section7-header-row">
-                  <span>Start Date</span>
-                  <span>Starting Program</span>
-                  <span>Tuition</span>
-                </div>
-                <div className="admin-section7-data-row">
-                  <input
-                    type="date"
-                    value={startDate}
-                    onChange={e => setStartDate(e.target.value)}
-                    className="admin-section7-input"
-                  />
-                  <input
-                    type="text"
-                    value={startingProgram}
-                    onChange={e => setStartingProgram(e.target.value)}
-                    className="admin-section7-input"
-                  />
-                  <input
-                    type="text"
-                    value={tuition}
-                    onChange={e => setTuition(e.target.value)}
-                    className="admin-section7-input"
-                  />
-                </div>
-                <div className="admin-section7-notes-header">Notes</div>
-                <div className="admin-section7-notes-body">
-                  <textarea
-                    value={notes}
-                    onChange={e => setNotes(e.target.value)}
-                    rows={5}
-                    className="admin-section7-notes-input"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="admin-info-grid" style={{ marginBottom: "24px" }}>
-              <div className="form-group">
-                <label htmlFor="adminNameEdit">Your Name</label>
-                <input
-                  id="adminNameEdit"
-                  type="text"
-                  value={adminName}
-                  onChange={e => setAdminName(e.target.value)}
-                  placeholder="Full name of approver"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="adminTitleEdit">
-                  Title{" "}
-                  <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>(e.g. CSR)</span>
-                </label>
-                <input
-                  id="adminTitleEdit"
-                  type="text"
-                  value={adminTitle}
-                  onChange={e => setAdminTitle(e.target.value)}
-                  placeholder="APCC Representative title"
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="catalogDateEdit">
-                  Catalog Date{" "}
-                  <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>
-                    (optional — fill or edit later)
-                  </span>
-                </label>
-                <input
-                  id="catalogDateEdit"
-                  type="text"
-                  value={catalogDate}
-                  onChange={e => setCatalogDate(e.target.value)}
-                  placeholder="Leave empty if needed later"
-                />
-              </div>
-            </div>
-
-            {formError && (
-              <div
-                style={{
-                  marginTop: "16px",
-                  padding: "12px 16px",
-                  background: "var(--error-bg)",
-                  borderRadius: "var(--radius-md)",
-                  color: "var(--error-color)",
-                  fontSize: "0.88rem",
-                }}>
-                {formError}
-              </div>
-            )}
-
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "flex-end",
-                marginTop: "28px",
-                paddingTop: "20px",
-                borderTop: "1px solid var(--border-light)",
-              }}>
-              <button
-                type="button"
-                className="btn btn-primary"
+          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "32px" }}>
+            {isAlreadyApproved ? (
+              <button 
+                className="btn btn-primary" 
                 onClick={async () => {
-                  setSubmitting(true)
-                  setFormError("")
+                  setSubmitting(true);
                   try {
                     const res = await fetch(`/api/admin/submissions/${id}/admin-data`, {
                       method: "PUT",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({
                         adminData: {
-                          adminName: adminName.trim(),
-                          notes: notes.trim(),
-                          title: adminTitle.trim() || undefined,
-                          catalogDate: catalogDate.trim() || undefined,
-                          startDate: startDate.trim() || undefined,
-                          startingProgram: startingProgram.trim() || undefined,
-                          tuition: tuition.trim() || undefined,
-                        },
-                      }),
-                    })
-                    const data = await res.json()
-                    if (!res.ok) {
-                      setFormError(data.error || "Update failed")
-                    } else {
-                      setSubmission(data.submission)
-                      window.open(`/api/admin/submissions/${id}/pdf`, "_blank")
+                          adminName, notes, title: adminTitle, catalogDate, startDate, endDate, selectedProgram, tuition, registrationFee, classHours, externHours, paymentsStartingDate, totalTuition
+                        }
+                      })
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      setSubmission(data.submission);
+                      window.open(`/api/admin/submissions/${id}/pdf`, "_blank");
                     }
-                  } catch {
-                    setFormError("Something went wrong. Please try again.")
                   } finally {
-                    setSubmitting(false)
+                    setSubmitting(false);
                   }
                 }}
                 disabled={submitting}
-                style={{ minWidth: "260px" }}>
-                {submitting ? "Saving..." : "Save & Download Updated PDF"}
+              >
+                {submitting ? "Saving..." : "Save & View PDF"}
               </button>
-            </div>
+            ) : (
+              <button className="btn btn-primary" onClick={handleApprove} disabled={submitting}>
+                {submitting ? "Approving..." : "Approve & Send Email"}
+              </button>
+            )}
           </div>
         </div>
-      )}
+      </div>
 
       {submitting && (
         <div className="submit-overlay">
           <div className="spinner" />
-          <p>Generating PDF and sending email...</p>
+          <p>Processing agreement...</p>
         </div>
       )}
     </>

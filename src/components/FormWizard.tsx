@@ -116,7 +116,11 @@ export default function FormWizard() {
           <StudentDetailsForm initialData={formData} onNext={handleDetailsComplete} />
         )}
         {currentStep === 2 && (
-          <AgreementView onBack={() => setCurrentStep(1)} onAccept={handleAgreementAccepted} />
+          <AgreementView 
+            onBack={() => setCurrentStep(1)} 
+            onAccept={handleAgreementAccepted} 
+            formData={formData}
+          />
         )}
         {currentStep === 3 && (
           <SignatureStep

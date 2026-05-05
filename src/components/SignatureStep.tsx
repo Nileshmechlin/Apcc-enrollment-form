@@ -33,7 +33,7 @@ export default function SignatureStep({
   error,
 }: Props) {
   const isMinorStudent = isMinor(formData.dateOfBirth)
-  const parentNameValid = !isMinorStudent || !!formData.parentsName?.trim()
+  const parentNameValid = !isMinorStudent || !!formData.parent1Name?.trim()
 
   const [mode, setMode] = useState<SignatureMode>("draw")
   const [typedSignature, setTypedSignature] = useState("")
@@ -208,7 +208,7 @@ export default function SignatureStep({
     const dataUrl = getSignatureDataUrl()
     if (!dataUrl) return
     if (isMinorStudent) {
-      if (!formData.parentsName?.trim()) return
+      if (!formData.parent1Name?.trim()) return
       const parentUrl = getParentSignatureDataUrl()
       if (!parentUrl) return
       onSubmit(dataUrl, parentUrl)
@@ -315,12 +315,12 @@ export default function SignatureStep({
           </h3>
           <p className="form-card-subtitle" style={{ marginBottom: "16px" }}>
             As the student is under 18, a parent or guardian must sign below.
-            {formData.parentsName && (
+            {formData.parent1Name && (
               <span className="detail-value" style={{ display: "block", marginTop: "4px" }}>
-                Signing as: {formData.parentsName}
+                Signing as: {formData.parent1Name}
               </span>
             )}
-            {!formData.parentsName?.trim() && (
+            {!formData.parent1Name?.trim() && (
               <span
                 style={{
                   display: "block",

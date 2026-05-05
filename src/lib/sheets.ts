@@ -39,8 +39,14 @@ export async function appendToSheet(formData: Record<string, string>) {
     "Last Name",
     "Email",
     "Phone",
+    "Address",
     "Date of Birth",
-    "Parent's Name",
+    "Emergency Contact",
+    "Emergency Phone",
+    "HS Diploma",
+    "Parent 1",
+    "Parent 2",
+    "Initials",
     "Date",
     "Signed",
     "Timestamp",
@@ -49,7 +55,7 @@ export async function appendToSheet(formData: Record<string, string>) {
   try {
     const headerCheck = await sheets.spreadsheets.values.get({
       spreadsheetId: sheetId,
-      range: "Sheet1!A1:L1",
+      range: "Sheet1!A1:Q1",
     })
 
     const existingHeaders = headerCheck.data.values?.[0]
@@ -57,7 +63,7 @@ export async function appendToSheet(formData: Record<string, string>) {
       // No headers yet — insert them
       await sheets.spreadsheets.values.update({
         spreadsheetId: sheetId,
-        range: "Sheet1!A1:L1",
+        range: "Sheet1!A1:Q1",
         valueInputOption: "USER_ENTERED",
         requestBody: {
           values: [headers],
@@ -68,7 +74,7 @@ export async function appendToSheet(formData: Record<string, string>) {
     // If reading fails (empty sheet), write headers
     await sheets.spreadsheets.values.update({
       spreadsheetId: sheetId,
-      range: "Sheet1!A1:L1",
+      range: "Sheet1!A1:Q1",
       valueInputOption: "USER_ENTERED",
       requestBody: {
         values: [headers],
@@ -102,8 +108,14 @@ export async function appendToSheet(formData: Record<string, string>) {
     lastName,
     formData.email || "",
     formData.phone || "",
+    formData.address || "",
     formData.dateOfBirth || "",
-    formData.parentsName || "",
+    `${formData.emergencyName} (${formData.emergencyRelationship})`,
+    formData.emergencyPhone || "",
+    formData.highSchoolDiploma || "",
+    formData.parent1Name || "",
+    formData.parent2Name || "",
+    formData.initials || "",
     formData.date || "",
     "Yes",
     timestamp,
@@ -111,7 +123,7 @@ export async function appendToSheet(formData: Record<string, string>) {
 
   await sheets.spreadsheets.values.append({
     spreadsheetId: sheetId,
-    range: "Sheet1!A:L",
+    range: "Sheet1!A:Q",
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [row],

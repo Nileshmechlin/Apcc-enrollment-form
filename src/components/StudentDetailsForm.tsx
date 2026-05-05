@@ -129,6 +129,19 @@ export default function StudentDetailsForm({ initialData, onNext }: Props) {
       )
     }
 
+    if (field.name === "medicalConditions") {
+      return (
+        <textarea
+          id={field.name}
+          value={data[field.name] || ""}
+          onChange={e => handleChange(field.name, e.target.value)}
+          placeholder={field.placeholder}
+          className={errors[field.name] ? "error" : ""}
+          rows={3}
+        />
+      )
+    }
+
     return (
       <input
         id={field.name}
@@ -154,10 +167,16 @@ export default function StudentDetailsForm({ initialData, onNext }: Props) {
           .map(field => (
             <div
               key={field.name}
-              className={`form-group ${field.name === "parentsName" ? "full-width" : ""}`}>
+              className={`form-group ${
+                field.name === "address" || 
+                field.name === "medicalConditions" || 
+                field.name.startsWith("parent") 
+                  ? "full-width" 
+                  : ""
+              }`}>
               <label htmlFor={field.name}>
                 {field.label}
-                {(field.required || (field.showWhenMinor && isMinor(data.dateOfBirth))) && (
+                {(field.required || (field.showWhenMinor && isMinor(data.dateOfBirth) && !field.name.includes("parent2"))) && (
                   <span className="required">*</span>
                 )}
               </label>

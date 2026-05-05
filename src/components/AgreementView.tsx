@@ -2,15 +2,28 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { agreementConfig } from '@/config/agreement';
+import Image from 'next/image';
+import logo from '@/APCC-Logo.png';
 
 interface Props {
   onBack: () => void;
   onAccept: () => void;
+  formData: Record<string, string>;
 }
 
 /** Renders agreement section content: paragraphs, ➔ bullets, and a) b) c) d) lettered lines. */
-function AgreementSectionContent({ content }: { content: string }) {
-  const lines = content.split('\n');
+function AgreementSectionContent({ content, formData }: { content: string; formData: Record<string, string> }) {
+  // Replace placeholders [fieldName] with actual values (case-insensitive)
+  let resolvedContent = content;
+  if (formData) {
+    Object.entries(formData).forEach(([key, value]) => {
+      // Create a regex that matches [key] case-insensitively
+      const regex = new RegExp(`\\[${key}\\]`, 'gi');
+      resolvedContent = resolvedContent.replace(regex, value || `[${key}]`);
+    });
+  }
+
+  const lines = resolvedContent.split('\n');
   const blocks: { type: 'para' | 'bullet' | 'lettered'; lines: string[] }[] = [];
   let current: { type: 'para' | 'bullet' | 'lettered'; lines: string[] } | null = null;
 
@@ -75,7 +88,7 @@ function AgreementSectionContent({ content }: { content: string }) {
   );
 }
 
-export default function AgreementView({ onBack, onAccept }: Props) {
+export default function AgreementView({ onBack, onAccept, formData }: Props) {
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [isChecked, setIsChecked] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -124,11 +137,98 @@ export default function AgreementView({ onBack, onAccept }: Props) {
           )}
         </div>
 
-        {(agreementConfig.sections as Array<{ heading: string; content: string; csrTableOnPdf?: boolean }>).map((section, index) => (
+        {(agreementConfig.pages as Array<{ number: number; content: string }>).map((page, index) => (
           <div key={index} className="agreement-section">
-            <h3>{section.heading}</h3>
-            <AgreementSectionContent content={section.content} />
-            {/* Section 7 table (Start Date, Starting Program, Tuition, Notes) is CSR-only — not shown to student */}
+            {/* Page 1 Header Table */}
+            {page.number === 1 && (
+              <div className="agreement-page-1-header">
+                <div className="agreement-page-header">
+                  <Image src={logo} alt="Logo" className="header-logo" width={60} height={60} />
+                  <span className="header-name">Accelerated Pathways Career College</span>
+                </div>
+                <h2 className="agreement-title">Accelerated Pathways Career College (APCC)</h2>
+                <h3 className="agreement-subtitle">Enrollment Agreement</h3>
+                
+                <div className="agreement-table">
+                  <div className="table-header">Student Information</div>
+                  <div className="table-row split">
+                    <div className="cell"><span className="label">Student Name:</span> {formData.fullName}</div>
+                    <div className="cell"><span className="label">DOB:</span> {formData.dateOfBirth}</div>
+                  </div>
+                  <div className="table-row">
+                    <div className="cell large">
+                      <span className="label">Address:</span> <span className="small-instr">(street address, additional address details, city, state, ZIP code)</span>
+                      <div className="value">{formData.address}</div>
+                    </div>
+                  </div>
+                  <div className="table-row split">
+                    <div className="cell"><span className="label">Phone:</span> {formData.phone}</div>
+                    <div className="cell"><span className="label">E-mail:</span> {formData.email}</div>
+                  </div>
+
+                  <div className="table-header">Student's Parents / Legal Guardian(s)</div>
+                  <div className="table-subheader">(required if the Student is a minor)</div>
+                  <div className="table-row"><div className="cell"><span className="label">1st Name:</span> {formData.parent1Name}</div></div>
+                  <div className="table-row"><div className="cell"><span className="label">Address:</span> {formData.parent1Address}</div></div>
+                  <div className="table-row split">
+                    <div className="cell"><span className="label">Phone:</span> {formData.parent1Phone}</div>
+                    <div className="cell"><span className="label">E-mail:</span> {formData.parent1Email}</div>
+                  </div>
+                  <div className="table-row"><div className="cell"><span className="label">2nd Name:</span> {formData.parent2Name}</div></div>
+                  <div className="table-row"><div className="cell"><span className="label">Address:</span> {formData.parent2Address}</div></div>
+                  <div className="table-row split">
+                    <div className="cell"><span className="label">Phone:</span> {formData.parent2Phone}</div>
+                    <div className="cell"><span className="label">E-mail:</span> {formData.parent2Email}</div>
+                  </div>
+
+                  <div className="table-header">Information in Case of Emergency</div>
+                  <div className="table-row"><div className="cell"><span className="label">Emergency Contact Name:</span> {formData.emergencyName}</div></div>
+                  <div className="table-row split">
+                    <div className="cell"><span className="label">Relationship:</span> {formData.emergencyRelationship}</div>
+                    <div className="cell"><span className="label">Phone:</span> {formData.emergencyPhone}</div>
+                  </div>
+                  <div className="table-row med">
+                    <div className="cell-label">
+                      <span className="label">Do you have any medical conditions...</span>
+                    </div>
+                    <div className="cell-value">
+                      <span className="small-instr">(Allergies, medications, specific medical accommodations, etc.)</span>
+                      <div className="value">{formData.medicalConditions || "None."}</div>
+                    </div>
+                  </div>
+                  <div className="table-row split-hs">
+                    <div className="cell"><span className="label">Do you have a High School Diploma or equivalent (GED)?</span></div>
+                    <div className="cell center">{formData.highSchoolDiploma}</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Logo Header for Page 2+ */}
+            {page.number > 1 && (
+              <div className="agreement-page-header">
+                <Image src={logo} alt="Logo" className="header-logo" width={60} height={60} />
+                <span className="header-name">Accelerated Pathways Career College</span>
+              </div>
+            )}
+
+            {/* Render content only if not Page 1 (which uses custom table) */}
+            {page.number !== 1 && (
+              <AgreementSectionContent content={page.content} formData={formData} />
+            )}
+            
+            {/* Footer Preview */}
+            <div className="agreement-footer-preview">
+              <div className="footer-left">
+                ______ Student Initials
+              </div>
+              <div className="footer-center">
+                Page {page.number} of {agreementConfig.pages.length}
+              </div>
+              <div className="footer-right">
+                January 15, 2026
+              </div>
+            </div>
           </div>
         ))}
       </div>

@@ -7,10 +7,16 @@ export interface AdminData {
   title?: string
   /** Catalog date; can be left empty for CSR to fill or edit later. */
   catalogDate?: string
-  /** Section 7 — filled by CSR (same alignment as PDF). */
+  /** Section 7/8 — filled by CSR (same alignment as PDF). */
   startDate?: string
-  startingProgram?: string
+  endDate?: string
+  selectedProgram?: string
   tuition?: string
+  registrationFee?: string
+  classHours?: string
+  externHours?: string
+  paymentsStartingDate?: string
+  totalTuition?: string
 }
 
 export interface Submission {
