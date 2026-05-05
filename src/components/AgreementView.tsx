@@ -220,7 +220,6 @@ export default function AgreementView({ onBack, onAccept, formData }: Props) {
             {/* Footer Preview */}
             <div className="agreement-footer-preview">
               <div className="footer-left">
-                ______ Student Initials
               </div>
               <div className="footer-center">
                 Page {page.number} of {agreementConfig.pages.length}

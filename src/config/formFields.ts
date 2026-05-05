@@ -95,13 +95,7 @@ export const formFields: FormField[] = [
     options: ["Yes", "No"],
     placeholder: "Select...",
   },
-  {
-    name: "initials",
-    label: "Student Initials (Signature for each page)",
-    type: "text",
-    required: true,
-    placeholder: "e.g. JD",
-  },
+
   {
     name: "parent1Name",
     label: "1st Parent/Guardian Name",

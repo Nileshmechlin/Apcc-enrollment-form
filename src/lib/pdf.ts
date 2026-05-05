@@ -51,7 +51,7 @@ function setThemeText(doc: jsPDF) {
   doc.setTextColor(THEME_RGB.r, THEME_RGB.g, THEME_RGB.b)
 }
 
-function drawFooter(doc: jsPDF, pageNum: number, totalPages: number, initials: string, signatureDataUrl?: string) {
+function drawFooter(doc: jsPDF, pageNum: number, totalPages: number, signatureDataUrl?: string) {
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
   const y = pageHeight - 15
@@ -61,13 +61,10 @@ function drawFooter(doc: jsPDF, pageNum: number, totalPages: number, initials: s
   doc.setFontSize(10)
   doc.setTextColor(0, 0, 0)
   
-  // Left: Signature Line + Student Initials Label
+  // Left: Signature Line (Simplified)
   doc.setLineWidth(0.3)
   const lineLength = 22
   doc.line(margin, y + 1, margin + lineLength, y + 1)
-  
-  doc.setFont("helvetica", "bold")
-  doc.text("Student Initials", margin + lineLength + 2, y + 1)
   
   if (signatureDataUrl) {
     try {
@@ -212,7 +209,6 @@ export async function generatePDF(
   const margin = 25 // Match the screenshot's wider body margin
   const contentWidth = pageWidth - margin * 2
   const pageHeight = doc.internal.pageSize.getHeight()
-  const initials = formData.initials || ""
   const totalPages = 11
 
   // --- Page 1: Exact Replication of Table ---
@@ -349,7 +345,7 @@ export async function generatePDF(
   doc.setFont("helvetica", "bold"); doc.text("Do you have a High School Diploma or equivalent (GED)?", tableMargin + 2, y + 6)
   doc.setFont("helvetica", "normal"); doc.text(formData.highSchoolDiploma || "", tableMargin + contentWidth - 38, y + 6)
 
-  drawFooter(doc, 1, totalPages, initials, signatureDataUrl)
+  drawFooter(doc, 1, totalPages, signatureDataUrl)
 
   // --- Pages 2-11 ---
   const pages = agreementConfig.pages
@@ -427,7 +423,7 @@ export async function generatePDF(
       const p8 = "It is your responsibility to keep your debit or credit card information accurate and up-to-date. If any changes occur, such as a new expiration date or billing address, you must notify APCC promptly to avoid payment issues or service suspension."
       currentY = renderWrappedText(doc, p8, margin, currentY, contentWidth)
 
-      drawFooter(doc, 2, totalPages, initials, signatureDataUrl)
+      drawFooter(doc, 2, totalPages, signatureDataUrl)
       continue
     }
 
@@ -455,7 +451,7 @@ export async function generatePDF(
         }
       })
       
-      drawFooter(doc, page.number, totalPages, initials, signatureDataUrl)
+      drawFooter(doc, page.number, totalPages, signatureDataUrl)
       continue
     }
 
@@ -502,7 +498,7 @@ export async function generatePDF(
         }
       }
       
-      drawFooter(doc, 4, totalPages, initials, signatureDataUrl)
+      drawFooter(doc, 4, totalPages, signatureDataUrl)
       continue
     }
 
@@ -553,7 +549,7 @@ export async function generatePDF(
         colWidths2
       )
 
-      drawFooter(doc, 8, totalPages, initials, signatureDataUrl)
+      drawFooter(doc, 8, totalPages, signatureDataUrl)
       continue
     }
 
@@ -604,7 +600,7 @@ export async function generatePDF(
       doc.text(notesLines, margin + 2, currentY + 7)
       currentY += notesBoxH
       
-      drawFooter(doc, 9, totalPages, initials, signatureDataUrl)
+      drawFooter(doc, 9, totalPages, signatureDataUrl)
       continue
     }
 
@@ -627,7 +623,7 @@ export async function generatePDF(
 
         currentY = renderWrappedText(doc, trimmed, margin, currentY, contentWidth) + 8
       }
-      drawFooter(doc, 10, totalPages, initials, signatureDataUrl)
+      drawFooter(doc, 10, totalPages, signatureDataUrl)
       continue
     }
 
@@ -674,7 +670,7 @@ export async function generatePDF(
           currentY = renderWrappedText(doc, trimmed, margin, currentY, contentWidth) + 6
         }
       }
-      drawFooter(doc, 7, totalPages, initials, signatureDataUrl)
+      drawFooter(doc, 7, totalPages, signatureDataUrl)
       continue
     }
 
@@ -720,7 +716,7 @@ export async function generatePDF(
           currentY = renderWrappedText(doc, trimmed, margin, currentY, contentWidth) + 4
         }
       }
-      drawFooter(doc, 6, totalPages, initials, signatureDataUrl)
+      drawFooter(doc, 6, totalPages, signatureDataUrl)
       continue
     }
 
@@ -789,7 +785,7 @@ export async function generatePDF(
         }
       }
       
-      drawFooter(doc, 5, totalPages, initials, signatureDataUrl)
+      drawFooter(doc, 5, totalPages, signatureDataUrl)
       continue
     } else if (page.number === 8) { // Page 8 (Payment Summary)
       const lines = content.split("Payment Summary")[0]
@@ -915,7 +911,7 @@ export async function generatePDF(
       })
     }
 
-    drawFooter(doc, page.number, totalPages, initials, signatureDataUrl)
+    drawFooter(doc, page.number, totalPages, signatureDataUrl)
   }
 
   return Buffer.from(doc.output("arraybuffer"))
