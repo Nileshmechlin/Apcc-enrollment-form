@@ -37,7 +37,7 @@ export async function sendSignedAgreementEmail({
 
   const fromName = process.env.FROM_NAME || "Student Agreement Form"
   const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USERNAME
-  const fromAddress = `"${fromName}" <${fromEmail}>`
+  const fromAddress = { name: fromName, address: fromEmail as string }
 
   const filename = `agreement-${studentName.replace(/\s+/g, "-").toLowerCase()}.pdf`
 
@@ -158,7 +158,7 @@ export async function sendSubmissionNotification({
 
   const fromName = process.env.FROM_NAME || "Student Agreement Form"
   const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USERNAME
-  const fromAddress = `"${fromName}" <${fromEmail}>`
+  const fromAddress = { name: fromName, address: fromEmail as string }
 
   const htmlBody = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -190,6 +190,59 @@ export async function sendSubmissionNotification({
     from: fromAddress,
     to: adminEmail,
     subject: `New Enrollment Application: ${studentName}`,
+    html: htmlBody,
+  })
+}
+
+/**
+ * Sends a confirmation email to the student when they submit the form.
+ */
+export async function sendStudentConfirmationEmail({
+  studentEmail,
+  studentName,
+}: {
+  studentEmail: string
+  studentName: string
+}) {
+  const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_SERVER || "smtp.gmail.com",
+    port: parseInt(process.env.SMTP_PORT || "587", 10),
+    secure: false,
+    auth: {
+      user: process.env.SMTP_USERNAME,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  })
+
+  const fromName = process.env.FROM_NAME || "Student Agreement Form"
+  const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USERNAME
+  const fromAddress = { name: fromName, address: fromEmail as string }
+
+  const htmlBody = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="background: linear-gradient(135deg, #3b82f6, #1d4ed8); padding: 24px; border-radius: 12px 12px 0 0; text-align: center;">
+        <h1 style="color: white; margin: 0; font-size: 22px;">✅ Form Submitted Successfully</h1>
+      </div>
+      <div style="background: #f9f9ff; padding: 24px; border: 1px solid #e5e5f0; border-top: none; border-radius: 0 0 12px 12px;">
+        <p style="color: #333; font-size: 15px;">Hello ${studentName},</p>
+        <p style="color: #555; font-size: 14px; line-height: 1.6;">
+          Thank you for submitting your enrollment agreement. We have received your submission and it is currently pending review by our administration team.
+        </p>
+        <p style="color: #555; font-size: 14px; line-height: 1.6;">
+          Once approved, you will receive another email containing the finalized, signed PDF for your records.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e5e5f0; margin: 30px 0 20px;" />
+        <p style="color: #999; font-size: 12px; text-align: center;">
+          This is an automated notification from Accelerated Pathways Career College.
+        </p>
+      </div>
+    </div>
+  `
+
+  await transporter.sendMail({
+    from: fromAddress,
+    to: studentEmail,
+    subject: `Agreement Received — ${studentName}`,
     html: htmlBody,
   })
 }

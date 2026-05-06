@@ -55,7 +55,7 @@ export default function StudentDetailsForm({ initialData, onNext }: Props) {
     formFields.forEach(field => {
       if (field.showWhenMinor && !minor) return
       const value = data[field.name]?.trim() || ""
-      const required = field.required || (field.showWhenMinor && minor)
+      const required = field.required || (field.showWhenMinor && minor && !field.name.includes("parent2"))
 
       if (required && !value) {
         newErrors[field.name] = `${field.label} is required`

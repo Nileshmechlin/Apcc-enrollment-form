@@ -16,6 +16,8 @@ export default function AdminDashboard() {
   const [submissions, setSubmissions] = useState<SubmissionSummary[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved">("all")
   const router = useRouter()
 
   useEffect(() => {
@@ -31,6 +33,17 @@ export default function AdminDashboard() {
 
   const pending = submissions.filter(s => s.status === "pending")
   const approved = submissions.filter(s => s.status === "approved")
+
+  const filteredSubmissions = submissions.filter(s => {
+    const matchesStatus = statusFilter === "all" || s.status === statusFilter
+    const searchLower = searchQuery.toLowerCase()
+    const matchesSearch = 
+      s.fullName.toLowerCase().includes(searchLower) ||
+      s.email.toLowerCase().includes(searchLower) ||
+      s.studentId.toLowerCase().includes(searchLower)
+    
+    return matchesStatus && matchesSearch
+  })
 
   return (
     <>
@@ -59,8 +72,38 @@ export default function AdminDashboard() {
 
       {/* Submissions table */}
       <div className="admin-card">
-        <div className="admin-card-header">
-          <h2>All Submissions</h2>
+        <div className="admin-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <h2 style={{ margin: 0 }}>All Submissions</h2>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <input 
+              type="text" 
+              placeholder="Search by name, email, or ID..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                minWidth: '250px'
+              }}
+            />
+            <select 
+              value={statusFilter} 
+              onChange={(e) => setStatusFilter(e.target.value as "all" | "pending" | "approved")}
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '6px',
+                fontSize: '0.9rem',
+                backgroundColor: 'white'
+              }}
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+            </select>
+          </div>
         </div>
 
         {loading && (
@@ -82,7 +125,13 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {!loading && submissions.length > 0 && (
+        {!loading && !error && submissions.length > 0 && filteredSubmissions.length === 0 && (
+          <div style={{ padding: "60px 24px", textAlign: "center", color: "var(--text-muted)" }}>
+            No matching submissions found.
+          </div>
+        )}
+
+        {!loading && filteredSubmissions.length > 0 && (
           <div style={{ overflowX: "auto" }}>
             <table className="admin-table">
               <thead>
@@ -95,7 +144,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {submissions.map(s => (
+                {filteredSubmissions.map(s => (
                   <tr key={s.id}>
                     <td>
                       <div

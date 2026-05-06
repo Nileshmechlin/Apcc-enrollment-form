@@ -48,7 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       adminNotes: adminData.notes || "",
       pdfBuffer,
       dateOfBirth: submission.formData.dateOfBirth || undefined,
-      parentsName: submission.formData.parentsName || undefined,
+      parentsName: submission.formData.parent1Name || undefined,
     })
   } catch (emailError) {
     console.error("[Approve] Email failed:", emailError)

@@ -517,7 +517,7 @@ export async function generatePDF(
       // Draw Main Table (7 columns with custom widths)
       const colWidths1 = [20, 20, 35, 15, 15, 20, 35]
       currentY = drawTable(doc, margin, currentY, contentWidth, 
-        ["Start Date", "End Date*", "Selected Program", "Tuition", "Reg. Fee", "Class Hours", "Extern/ Intern Hours"],
+        ["Start Date", "End Date*", "Selected Program", "Tuition Cost", "Reg. Fee", "Class Hours", "Extern/ Intern Hours"],
         [[
           adminData?.startDate || "", 
           adminData?.endDate || "", 
@@ -577,7 +577,7 @@ export async function generatePDF(
       currentY += 4
       // Draw Selected Program Table
       currentY = drawTable(doc, margin, currentY, contentWidth,
-        ["Selected Program", "Payments starting date", "Total tuition"],
+        ["Selected Program", "Payments starting date", "Total Tuition Cost"],
         [[
           adminData?.selectedProgram || "", 
           adminData?.paymentsStartingDate || "", 

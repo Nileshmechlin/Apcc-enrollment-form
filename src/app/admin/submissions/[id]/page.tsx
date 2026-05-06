@@ -340,12 +340,12 @@ export default function SubmissionDetailPage() {
               <InfoField label="Start Date" value={submission.adminData?.startDate} />
               <InfoField label="End Date" value={submission.adminData?.endDate} />
               <InfoField label="Selected Program" value={submission.adminData?.selectedProgram} />
-              <InfoField label="Tuition" value={submission.adminData?.tuition} />
+              <InfoField label="Tuition Cost" value={submission.adminData?.tuition} />
               <InfoField label="Reg. Fee" value={submission.adminData?.registrationFee} />
               <InfoField label="Class Hours" value={submission.adminData?.classHours} />
               <InfoField label="Extern Hours" value={submission.adminData?.externHours} />
               <InfoField label="Payments Start" value={submission.adminData?.paymentsStartingDate} />
-              <InfoField label="Total Tuition" value={submission.adminData?.totalTuition} />
+              <InfoField label="Total Tuition Cost" value={submission.adminData?.totalTuition} />
               {submission.adminData?.notes && (
                 <div style={{ gridColumn: "1 / -1" }}>
                   <InfoField label="Notes" value={submission.adminData.notes} />
@@ -397,7 +397,7 @@ export default function SubmissionDetailPage() {
               <input type="text" value={selectedProgram} onChange={e => setSelectedProgram(e.target.value)} />
             </div>
             <div className="form-group">
-              <label>Tuition</label>
+              <label>Tuition Cost</label>
               <input type="text" value={tuition} onChange={e => setTuition(e.target.value)} />
             </div>
             <div className="form-group">
@@ -417,7 +417,7 @@ export default function SubmissionDetailPage() {
               <input type="date" value={paymentsStartingDate} onChange={e => setPaymentsStartingDate(e.target.value)} />
             </div>
             <div className="form-group">
-              <label>Total Tuition</label>
+              <label>Total Tuition Cost</label>
               <input type="text" value={totalTuition} onChange={e => setTotalTuition(e.target.value)} />
             </div>
           </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { saveSubmission } from "@/lib/storage"
-import { sendSubmissionNotification } from "@/lib/email"
+import { sendSubmissionNotification, sendStudentConfirmationEmail } from "@/lib/email"
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,6 +29,11 @@ export async function POST(request: NextRequest) {
         studentName: formData.fullName,
         studentEmail: formData.email,
         adminEmail: process.env.ADMIN_EMAIL || "enrollment@apccollege.org",
+      })
+      // Send confirmation to student
+      await sendStudentConfirmationEmail({
+        studentName: formData.fullName,
+        studentEmail: formData.email,
       })
     } catch (emailError) {
       // Log error but don't fail the submission
