@@ -30,6 +30,7 @@ export interface Submission {
   adminSignatureDataUrl: string | null
   submittedAt: string
   approvedAt: string | null
+  deletedAt: string | null
 }
 
 // ---------------------------------------------------------------------------
@@ -54,6 +55,11 @@ function rowToSubmission(row: Record<string, any>): Submission {
         ? row.approved_at.toISOString()
         : String(row.approved_at)
       : null,
+    deletedAt: row.deleted_at
+      ? row.deleted_at instanceof Date
+        ? row.deleted_at.toISOString()
+        : String(row.deleted_at)
+      : null,
   }
 }
 
@@ -61,10 +67,17 @@ function rowToSubmission(row: Record<string, any>): Submission {
 // Public API (all async — PostgreSQL backed)
 // ---------------------------------------------------------------------------
 
-export async function readSubmissions(): Promise<Submission[]> {
-  const result = await pool.query(
-    "SELECT * FROM submissions ORDER BY submitted_at DESC",
+export async function readSubmissions(includeDeleted = false): Promise<Submission[]> {
+  // Purge submissions that have been soft-deleted for more than 30 days
+  await pool.query(
+    "DELETE FROM submissions WHERE deleted_at IS NOT NULL AND deleted_at < NOW() - INTERVAL '30 days'",
   )
+
+  const query = includeDeleted
+    ? "SELECT * FROM submissions WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC"
+    : "SELECT * FROM submissions WHERE deleted_at IS NULL ORDER BY submitted_at DESC"
+
+  const result = await pool.query(query)
   return result.rows.map(rowToSubmission)
 }
 
@@ -134,6 +147,10 @@ export async function updateSubmission(
     setClauses.push(`approved_at = $${paramIndex++}`)
     values.push(updates.approvedAt ?? null)
   }
+  if ("deletedAt" in updates) {
+    setClauses.push(`deleted_at = $${paramIndex++}`)
+    values.push(updates.deletedAt ? new Date(updates.deletedAt) : null)
+  }
 
   if (setClauses.length === 0) {
     // Nothing to update — just return the current record
@@ -148,4 +165,12 @@ export async function updateSubmission(
 
   if (result.rows.length === 0) return null
   return rowToSubmission(result.rows[0])
+}
+
+export async function hardDeleteSubmission(id: string): Promise<boolean> {
+  const result = await pool.query(
+    "DELETE FROM submissions WHERE id = $1 RETURNING id",
+    [id],
+  )
+  return result.rows.length > 0
 }

@@ -7,7 +7,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const submissions = await readSubmissions()
+  const { searchParams } = new URL(request.url)
+  const isTrash = searchParams.get("trash") === "true"
+
+  const submissions = await readSubmissions(isTrash)
 
   // Return lightweight list (omit heavy signature data URLs)
   const list = submissions.map(s => ({
@@ -18,6 +21,7 @@ export async function GET(request: NextRequest) {
     studentId: s.formData.studentId || "",
     submittedAt: s.submittedAt,
     approvedAt: s.approvedAt,
+    deletedAt: s.deletedAt,
   }))
 
   return NextResponse.json({ submissions: list })

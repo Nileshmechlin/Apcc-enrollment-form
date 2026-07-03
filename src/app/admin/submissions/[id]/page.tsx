@@ -29,6 +29,7 @@ interface Submission {
   adminSignatureDataUrl: string | null
   submittedAt: string
   approvedAt: string | null
+  deletedAt: string | null
 }
 
 function InfoField({ label, value }: { label: string; value?: string }) {
@@ -39,6 +40,13 @@ function InfoField({ label, value }: { label: string; value?: string }) {
       <span className="admin-info-value">{value}</span>
     </div>
   )
+}
+
+interface ConfirmModalState {
+  isOpen: boolean
+  title: string
+  message: string
+  onConfirm: () => void
 }
 
 export default function SubmissionDetailPage() {
@@ -68,6 +76,65 @@ export default function SubmissionDetailPage() {
   const [formError, setFormError] = useState("")
   const [submitting, setSubmitting] = useState(false)
   const [approved, setApproved] = useState(false)
+
+  const [confirmModal, setConfirmModal] = useState<ConfirmModalState>({
+    isOpen: false,
+    title: "",
+    message: "",
+    onConfirm: () => {},
+  })
+
+  const handleMoveToTrash = async () => {
+    try {
+      const res = await fetch(`/api/admin/submissions/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        router.push("/admin");
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to move submission to trash");
+      }
+    } catch {
+      alert("Failed to move submission to trash");
+    }
+  }
+
+  const triggerMoveToTrash = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Move to Trash",
+      message: "Are you sure you want to move this submission to the Trash?",
+      onConfirm: () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        handleMoveToTrash()
+      }
+    })
+  }
+
+  const handlePermanentDelete = async () => {
+    try {
+      const res = await fetch(`/api/admin/submissions/${id}?permanent=true`, { method: "DELETE" });
+      if (res.ok) {
+        router.push("/admin");
+      } else {
+        const data = await res.json();
+        alert(data.error || "Failed to delete submission");
+      }
+    } catch {
+      alert("Failed to delete submission");
+    }
+  }
+
+  const triggerPermanentDelete = () => {
+    setConfirmModal({
+      isOpen: true,
+      title: "Delete Permanently",
+      message: "Are you sure you want to PERMANENTLY delete this submission? This action cannot be undone.",
+      onConfirm: () => {
+        setConfirmModal(prev => ({ ...prev, isOpen: false }))
+        handlePermanentDelete()
+      }
+    })
+  }
 
   useEffect(() => {
     fetch(`/api/admin/submissions/${id}`)
@@ -208,10 +275,167 @@ export default function SubmissionDetailPage() {
     )
   }
 
+  const isDeleted = !!submission.deletedAt
+
   return (
     <>
+      <style>{`
+        @keyframes modalFadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+        @keyframes modalScaleIn {
+          from { transform: scale(0.95); opacity: 0; }
+          to { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+
+      {/* Custom Confirmation Modal */}
+      {confirmModal.isOpen && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          backgroundColor: "rgba(15, 23, 42, 0.45)",
+          backdropFilter: "blur(4px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 100,
+          animation: "modalFadeIn 0.2s ease"
+        }}>
+          <div style={{
+            background: "white",
+            padding: "32px",
+            borderRadius: "var(--radius-lg)",
+            boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)",
+            width: "100%",
+            maxWidth: "440px",
+            textAlign: "center",
+            border: "1px solid var(--border-light)",
+            animation: "modalScaleIn 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)"
+          }}>
+            <div style={{
+              width: "48px",
+              height: "48px",
+              background: confirmModal.title.includes("Permanent") ? "var(--error-bg)" : "var(--accent-light)",
+              color: confirmModal.title.includes("Permanent") ? "var(--error-color)" : "var(--accent-primary)",
+              borderRadius: "50%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 20px",
+              fontSize: "1.25rem"
+            }}>
+              {confirmModal.title.includes("Permanent") ? "⚠️" : "🗑️"}
+            </div>
+            <h3 style={{
+              fontSize: "1.15rem",
+              fontWeight: 700,
+              color: "var(--text-primary)",
+              marginBottom: "12px"
+            }}>
+              {confirmModal.title}
+            </h3>
+            <p style={{
+              fontSize: "0.9rem",
+              color: "var(--text-secondary)",
+              lineHeight: 1.5,
+              marginBottom: "28px"
+            }}>
+              {confirmModal.message}
+            </p>
+            <div style={{
+              display: "flex",
+              gap: "12px",
+              justifyContent: "center"
+            }}>
+              <button
+                className="btn btn-secondary"
+                style={{ 
+                  flex: 1, 
+                  padding: "10px 16px", 
+                  fontSize: "0.88rem",
+                  background: "transparent",
+                  borderColor: "var(--border-light)",
+                  color: "var(--text-secondary)"
+                }}
+                onClick={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btn-primary"
+                style={{ 
+                  flex: 1, 
+                  padding: "10px 16px", 
+                  fontSize: "0.88rem",
+                  background: confirmModal.title.includes("Permanent") ? "var(--error-color)" : "var(--accent-primary)",
+                  borderColor: confirmModal.title.includes("Permanent") ? "var(--error-color)" : "var(--accent-primary)"
+                }}
+                onClick={confirmModal.onConfirm}
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Trashed Warning Banner */}
+      {isDeleted && (
+        <div style={{
+          background: "var(--error-bg)",
+          border: "1px solid var(--error-color)",
+          color: "var(--error-color)",
+          padding: "16px 20px",
+          borderRadius: "var(--radius-lg)",
+          marginBottom: "24px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          flexWrap: "wrap",
+          gap: "16px"
+        }}>
+          <div>
+            <h3 style={{ margin: "0 0 4px", fontSize: "0.95rem", fontWeight: 700 }}>⚠️ In Trash Bin</h3>
+            <p style={{ margin: 0, fontSize: "0.85rem", opacity: 0.9 }}>
+              This submission is soft-deleted. It will be permanently removed automatically within 30 days.
+            </p>
+          </div>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <button 
+              className="btn btn-primary"
+              style={{ padding: "8px 16px", fontSize: "0.83rem", background: "var(--success-color)", borderColor: "var(--success-color)" }}
+              onClick={async () => {
+                try {
+                  const res = await fetch(`/api/admin/submissions/${id}/restore`, { method: "POST" });
+                  if (res.ok) {
+                    const data = await res.json();
+                    setSubmission(data.submission);
+                  } else {
+                    const data = await res.json();
+                    alert(data.error || "Failed to restore submission");
+                  }
+                } catch {
+                  alert("Failed to restore submission");
+                }
+              }}
+            >
+              Restore
+            </button>
+            <button 
+              className="btn btn-secondary"
+              style={{ padding: "8px 16px", fontSize: "0.83rem", color: "var(--error-color)", borderColor: "var(--error-color)", background: "transparent" }}
+              onClick={triggerPermanentDelete}
+            >
+              Delete Permanently
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumb */}
-      <div className="admin-breadcrumb">
+      <div className="admin-breadcrumb" style={{ display: "flex", alignItems: "center", gap: "12px" }}>
         <button
           className="btn btn-secondary"
           style={{ padding: "6px 16px", fontSize: "0.83rem" }}
@@ -219,11 +443,35 @@ export default function SubmissionDetailPage() {
           ← Dashboard
         </button>
         <span className="admin-breadcrumb-id">#{id.slice(0, 8)}</span>
-        <span
-          className={`admin-badge admin-badge--${submission.status}`}
-          style={{ marginLeft: "auto" }}>
-          {isAlreadyApproved ? "Approved" : "Pending Review"}
-        </span>
+        
+        {isDeleted ? (
+          <span className="admin-badge" style={{ backgroundColor: "#94a3b8", color: "white", marginLeft: "auto" }}>
+            Trashed
+          </span>
+        ) : (
+          <span
+            className={`admin-badge admin-badge--${submission.status}`}
+            style={{ marginLeft: "auto" }}>
+            {isAlreadyApproved ? "Approved" : "Pending Review"}
+          </span>
+        )}
+
+        {!isDeleted && (
+          <button
+            className="btn btn-secondary"
+            style={{ 
+              padding: "6px 16px", 
+              fontSize: "0.83rem", 
+              color: "var(--error-color)", 
+              borderColor: "var(--error-color)", 
+              background: "transparent",
+              marginLeft: "8px"
+            }}
+            onClick={triggerMoveToTrash}
+          >
+            Move to Trash
+          </button>
+        )}
       </div>
 
       {/* ── 1. Student Info ── */}
@@ -372,122 +620,124 @@ export default function SubmissionDetailPage() {
       )}
 
       {/* Admin Approval form */}
-      <div className="admin-card">
-        <div className="admin-card-header">
-          <h2>{isAlreadyApproved ? "Edit Admin Details" : "Admin Approval"}</h2>
-        </div>
-        <div className="admin-card-body">
-          <p style={{ margin: "0 0 24px", fontSize: "0.88rem", color: "var(--text-muted)" }}>
-            {isAlreadyApproved 
-              ? "Update the agreement details below. Saving will update the records and open the revised PDF."
-              : "Fill in the enrollment details and sign below to approve the agreement and notify the student."}
-          </p>
-
-          <div className="admin-info-grid" style={{ marginBottom: "24px" }}>
-            <div className="form-group">
-              <label>Start Date</label>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label>End Date</label>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label>Selected Program</label>
-              <input type="text" value={selectedProgram} onChange={e => setSelectedProgram(e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label>Tuition Cost</label>
-              <input type="text" value={tuition} onChange={e => setTuition(e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label>Reg. Fee</label>
-              <input type="text" value={registrationFee} onChange={e => setRegistrationFee(e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label>Class Hours</label>
-              <input type="text" value={classHours} onChange={e => setClassHours(e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label>Extern Hours</label>
-              <input type="text" value={externHours} onChange={e => setExternHours(e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label>Payments Start Date</label>
-              <input type="date" value={paymentsStartingDate} onChange={e => setPaymentsStartingDate(e.target.value)} />
-            </div>
-            <div className="form-group">
-              <label>Total Tuition Cost</label>
-              <input type="text" value={totalTuition} onChange={e => setTotalTuition(e.target.value)} />
-            </div>
+      {!isDeleted && (
+        <div className="admin-card">
+          <div className="admin-card-header">
+            <h2>{isAlreadyApproved ? "Edit Admin Details" : "Admin Approval"}</h2>
           </div>
+          <div className="admin-card-body">
+            <p style={{ margin: "0 0 24px", fontSize: "0.88rem", color: "var(--text-muted)" }}>
+              {isAlreadyApproved 
+                ? "Update the agreement details below. Saving will update the records and open the revised PDF."
+                : "Fill in the enrollment details and sign below to approve the agreement and notify the student."}
+            </p>
 
-          <div className="admin-info-grid" style={{ marginBottom: "24px" }}>
-            <div className="form-group">
-              <label>Your Name <span className="required">*</span></label>
-              <input type="text" value={adminName} onChange={e => setAdminName(e.target.value)} />
+            <div className="admin-info-grid" style={{ marginBottom: "24px" }}>
+              <div className="form-group">
+                <label>Start Date</label>
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>End Date</label>
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Selected Program</label>
+                <input type="text" value={selectedProgram} onChange={e => setSelectedProgram(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Tuition Cost</label>
+                <input type="text" value={tuition} onChange={e => setTuition(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Reg. Fee</label>
+                <input type="text" value={registrationFee} onChange={e => setRegistrationFee(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Class Hours</label>
+                <input type="text" value={classHours} onChange={e => setClassHours(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Extern Hours</label>
+                <input type="text" value={externHours} onChange={e => setExternHours(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Payments Start Date</label>
+                <input type="date" value={paymentsStartingDate} onChange={e => setPaymentsStartingDate(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Total Tuition Cost</label>
+                <input type="text" value={totalTuition} onChange={e => setTotalTuition(e.target.value)} />
+              </div>
             </div>
-            <div className="form-group">
-              <label>Title (e.g. CSR)</label>
-              <input type="text" value={adminTitle} onChange={e => setAdminTitle(e.target.value)} />
+
+            <div className="admin-info-grid" style={{ marginBottom: "24px" }}>
+              <div className="form-group">
+                <label>Your Name <span className="required">*</span></label>
+                <input type="text" value={adminName} onChange={e => setAdminName(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Title (e.g. CSR)</label>
+                <input type="text" value={adminTitle} onChange={e => setAdminTitle(e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label>Catalog Date</label>
+                <input type="text" value={catalogDate} onChange={e => setCatalogDate(e.target.value)} />
+              </div>
             </div>
-            <div className="form-group">
-              <label>Catalog Date</label>
-              <input type="text" value={catalogDate} onChange={e => setCatalogDate(e.target.value)} />
+
+            <div className="form-group full-width">
+              <label>Notes</label>
+              <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} />
             </div>
-          </div>
 
-          <div className="form-group full-width">
-            <label>Notes</label>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={4} />
-          </div>
-
-          {!isAlreadyApproved && (
-            <div style={{ marginTop: "24px" }}>
-              <label style={{ display: "block", marginBottom: "12px", fontWeight: 500 }}>Your Signature <span className="required">*</span></label>
-              <SignatureCapture onCapture={handleSignatureCapture} />
-            </div>
-          )}
-
-          {formError && <p className="error-message" style={{ marginTop: "16px" }}>{formError}</p>}
-
-          <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "32px" }}>
-            {isAlreadyApproved ? (
-              <button 
-                className="btn btn-primary" 
-                onClick={async () => {
-                  setSubmitting(true);
-                  try {
-                    const res = await fetch(`/api/admin/submissions/${id}/admin-data`, {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        adminData: {
-                          adminName, notes, title: adminTitle, catalogDate, startDate, endDate, selectedProgram, tuition, registrationFee, classHours, externHours, paymentsStartingDate, totalTuition
-                        }
-                      })
-                    });
-                    if (res.ok) {
-                      const data = await res.json();
-                      setSubmission(data.submission);
-                      window.open(`/api/admin/submissions/${id}/pdf`, "_blank");
-                    }
-                  } finally {
-                    setSubmitting(false);
-                  }
-                }}
-                disabled={submitting}
-              >
-                {submitting ? "Saving..." : "Save & View PDF"}
-              </button>
-            ) : (
-              <button className="btn btn-primary" onClick={handleApprove} disabled={submitting}>
-                {submitting ? "Approving..." : "Approve & Send Email"}
-              </button>
+            {!isAlreadyApproved && (
+              <div style={{ marginTop: "24px" }}>
+                <label style={{ display: "block", marginBottom: "12px", fontWeight: 500 }}>Your Signature <span className="required">*</span></label>
+                <SignatureCapture onCapture={handleSignatureCapture} />
+              </div>
             )}
+
+            {formError && <p className="error-message" style={{ marginTop: "16px" }}>{formError}</p>}
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "32px" }}>
+              {isAlreadyApproved ? (
+                <button 
+                  className="btn btn-primary" 
+                  onClick={async () => {
+                    setSubmitting(true);
+                    try {
+                      const res = await fetch(`/api/admin/submissions/${id}/admin-data`, {
+                        method: "PUT",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          adminData: {
+                            adminName, notes, title: adminTitle, catalogDate, startDate, endDate, selectedProgram, tuition, registrationFee, classHours, externHours, paymentsStartingDate, totalTuition
+                          }
+                        })
+                      });
+                      if (res.ok) {
+                        const data = await res.json();
+                        setSubmission(data.submission);
+                        window.open(`/api/admin/submissions/${id}/pdf`, "_blank");
+                      }
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
+                  disabled={submitting}
+                >
+                  {submitting ? "Saving..." : "Save & View PDF"}
+                </button>
+              ) : (
+                <button className="btn btn-primary" onClick={handleApprove} disabled={submitting}>
+                  {submitting ? "Approving..." : "Approve & Send Email"}
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {submitting && (
         <div className="submit-overlay">

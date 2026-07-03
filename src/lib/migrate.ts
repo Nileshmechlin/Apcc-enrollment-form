@@ -24,7 +24,8 @@ export async function runMigrations(): Promise<void> {
     ALTER TABLE submissions
     ADD COLUMN IF NOT EXISTS parent_signature_data_url TEXT,
     ADD COLUMN IF NOT EXISTS admin_data JSONB,
-    ADD COLUMN IF NOT EXISTS admin_signature_data_url TEXT;
+    ADD COLUMN IF NOT EXISTS admin_signature_data_url TEXT,
+    ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ;
   `)
 
   // Index for fast listing ordered by newest first
